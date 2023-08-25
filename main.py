@@ -33,8 +33,6 @@ def generate_multilabel_toy_dataset(sample_number=1000, x_res=256, y_res=256, ch
 
     # TODO Detect if the path already has a dataset in it; if it does, then don't generate images...
 
-
-
     # Warnings and input checking
     if (v_min != 0 or v_max != 1) and save_to_folder == True:
         warnings.warn(f"v_min and v_max of 0-1 should be used when saving images!"
@@ -87,17 +85,7 @@ def generate_multilabel_toy_dataset(sample_number=1000, x_res=256, y_res=256, ch
                 label_matrix[i][j] == 1                 # set label to true
                 image_matrix[i] = draw_shapes(image_matrix[i], j, size, frequency, v_max, x_res, y_res, allow_shape_cutoff)# draw polygon
 
-    # Changing the order of dimensions
-    image_matrix = np.transpose(image_matrix, (0, 2, 3, 1))
-    # Show images (temp)
-    """print(image_matrix.shape)
-    for img in image_matrix:
-        for i in range(len(img)):
-            print(img[i])
-        # print(img)
-        print(img.shape)
-        PILimg = Image.fromarray(img.astype('uint8'))
-        PILimg.show()"""
+    image_matrix = np.transpose(image_matrix, (0, 2, 3, 1)) # Changing the order of dimensions
 
     if save_to_folder is True:
         saved_img_matrix = image_matrix*255
