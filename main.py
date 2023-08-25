@@ -36,6 +36,7 @@ def generate_multilabel_toy_dataset(sample_number=1000, x_res=256, y_res=256, ch
                     raise Exception("Data folder already populated with files!")
         else:
             os.makedirs(path)
+            os.makedirs(f"{path}\\Dataset")
 
     # Warnings and input checking
     if (v_min != 0 or v_max != 1) and save_to_folder is True:
@@ -92,7 +93,7 @@ def generate_multilabel_toy_dataset(sample_number=1000, x_res=256, y_res=256, ch
         saved_img_matrix = image_matrix*255
         for i in range(len(image_matrix)):
             pil_img = Image.fromarray(saved_img_matrix[i].astype('uint8'))   # convert image to PIL image and save
-            pil_img.save(f"{path}/{i:05}.png", "PNG")
+            pil_img.save(f"{path}\\Dataset\\{i:05}.png", "PNG")
 
         with open(f"{path}\\labels.csv", "w") as f:  # Save label data
             for i in range(len(label_matrix)):
@@ -142,4 +143,4 @@ def draw_shapes(image, label, size, frequency, v_max, x_res, y_res):
     return image
 
 
-generate_multilabel_toy_dataset(100, path="DataFolder", save_to_folder=True)
+generate_multilabel_toy_dataset(100, path="Dataset", save_to_folder=True)
