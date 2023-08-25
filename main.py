@@ -142,4 +142,4 @@ def draw_shapes(image, label, size, frequency, v_max, x_res, y_res):
     return image
 
 
-generate_multilabel_toy_dataset(100, path="I:\Python\Projects\MultiClassDatasetGenerator\DataFolder", save_to_folder=True)
+generate_multilabel_toy_dataset(100, path="DataFolder", save_to_folder=True)
