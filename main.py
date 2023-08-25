@@ -17,6 +17,8 @@ def generate_multilabel_toy_dataset(sample_number=1000, x_res=256, y_res=256, ch
     save_to_folder  - if data should be saved
     """
 
+    # TODO Detect if the path already has a dataset in it; if it does, then don't generate images...
+
     # make blank numpy array
     image_matrix = np.full((sample_number, y_res, x_res, channels), v_min)
 
@@ -25,5 +27,7 @@ def generate_multilabel_toy_dataset(sample_number=1000, x_res=256, y_res=256, ch
                       f"v_min and v_max of {v_min} and {v_max} found.")
 
     for i in range(sample_number):
+        for j in range(label_count):
+            # determine if a class should be used in an image
 
 
