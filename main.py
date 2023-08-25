@@ -1,6 +1,7 @@
 import numpy as np
 import skimage
 import warnings
+import random
 def generate_multilabel_toy_dataset(sample_number=1000, x_res=256, y_res=256, channels=3, v_min=0, v_max=1,
                                       label_count=4, label_frequency=0.5, path=None, save_to_folder = False):
     """
@@ -29,5 +30,6 @@ def generate_multilabel_toy_dataset(sample_number=1000, x_res=256, y_res=256, ch
     for i in range(sample_number):
         for j in range(label_count):
             # determine if a class should be used in an image
+
 
 
