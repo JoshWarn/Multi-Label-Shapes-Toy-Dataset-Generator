@@ -18,10 +18,11 @@ def generate_multilabel_toy_dataset(sample_number=1000, x_res=256, y_res=256, ch
     """
 
     # make blank numpy array
+    image_matrix = np.full((sample_number, y_res, x_res, channels), v_min)
 
     if (v_min != 0 or v_max != 1) and save_to_folder == True:
         warnings.warr(f"v_min and v_max of 0-1 should be used when saving images!"
                       f"v_min and v_max of {v_min} and {v_max} found.")
 
-
     for i in range(sample_number):
+
