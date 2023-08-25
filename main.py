@@ -1,7 +1,7 @@
 import numpy as np
 import skimage
 import warnings
-class generate_multilabel_toy_dataset(sample_number=1000, x_res=256, y_res=256, channels=3, v_min=0, v_max=1,
+def generate_multilabel_toy_dataset(sample_number=1000, x_res=256, y_res=256, channels=3, v_min=0, v_max=1,
                                       label_count=4, label_frequency=0.5, path=None, save_to_folder = False):
     """
     Creates a dataset with basic shapes; 1, 2, 3, 4... = circle, line, triangle, square etc...
@@ -25,3 +25,7 @@ class generate_multilabel_toy_dataset(sample_number=1000, x_res=256, y_res=256, 
 
 
     for i in range(sample_number):
+
+
+def test(v1, v2):
+    print(v1, v2)
