@@ -107,7 +107,7 @@ def generate_multilabel_toy_dataset(sample_number=1000, x_res=256, y_res=256, ch
                 f.write(f"{txt_str}\n")
 
     if verbose:
-        print(f"Dataset of {sample_number} {x_res}x{y_res}x{channels} samples built in {time.time()-start_time} seconds.")
+        print(f"Dataset of {sample_number} {x_res}x{y_res}x{channels} samples built in {time.time()-start_time:0f} seconds.")
 
     return image_matrix, label_matrix
 
@@ -126,25 +126,32 @@ def draw_shapes(image, label, size, frequency, v_max, x_res, y_res):
         else:
             item_size = size
 
-        if label == 1:  # If label is a line, determine coordinates of line
-            x1, y1 = -1, -1
-            while x1 < 0 or x1 >= x_res or y1 < 0 or y1 >= y_res:   # try until all points are valid; slow but easy.
-                # Select a random starting point
-                x0, y0 = random.randint(0, x_res-1), random.randint(0, y_res-1)   # Select a random starting point
-                ang = random.uniform(0, math.pi*2)                                  # Select a random angle
-                x1, y1 = int(x0 + math.cos(ang)*item_size),  int(y0 + math.sin(ang)*item_size)  # calc endpoints
-        else:   # Is a circle or n-gon; determine center position
-            ry = random.randint(0 + item_size, y_res - item_size - 1)
-            cx = random.randint(0 + item_size, x_res - item_size - 1)
+        # Generate a circle within the range to use as bounds for the shape.
+        ry = random.randint(0 + item_size, y_res - item_size - 1)
+        cx = random.randint(0 + item_size, x_res - item_size - 1)
+
+        # have to add 2 to the label to generate the correct number of points; generates 1 extra.
+        # Generate an initial point at an angle of 0; maybe consider randomizing this later?
+        angle_list = (np.linspace(0, 2 * np.pi, label + 2)+random.random()*np.pi) % (2*np.pi)
+        x_pos_list = (ry + np.cos(angle_list[0:-1]) * item_size).astype(int)
+        y_pos_list = (cx + np.sin(angle_list[0:-1]) * item_size).astype(int)
 
         for j in range(len(image)):
             if label == 0:  # draw circle
                 rr, cc = skimage.draw.circle_perimeter(ry, cx, int(item_size/2))
                 image[j][rr, cc] = v_max
 
-            if label == 1:  # draw line
-                rr, cc = skimage.draw.line(y0, x0, y1, x1)
-                image[j][rr, cc] = v_max
+            # else, generate the line(s)from the circle's perimeter.
+            else:
+                # minor speed improvement to stop overdrawing lines twice for lines:
+                if label == 1:
+                    for k in range(len(x_pos_list)-1):
+                        rr, cc = skimage.draw.line(y_pos_list[k], x_pos_list[k], y_pos_list[k+1], x_pos_list[k+1])
+                        image[j][rr, cc] = v_max
+                else:
+                    for k in range(len(x_pos_list)):
+                        rr, cc = skimage.draw.line(y_pos_list[k-1], x_pos_list[k-1], y_pos_list[k], x_pos_list[k])
+                        image[j][rr, cc] = v_max
 
             if label >= 2:  # draw normal n-gon
                 # TODO NOT implemented!
@@ -152,4 +159,16 @@ def draw_shapes(image, label, size, frequency, v_max, x_res, y_res):
     return image
 
 
-generate_multilabel_toy_dataset(10000, path="Dataset", save_to_folder=True)
+generate_multilabel_toy_dataset(1000, path="Dataset", save_to_folder=True)
+
+
+"""
+Time statistics:
+Saved 1000 256x256x3 samples in 2.519 seconds.
+Generated 1000 256x256x3 samples in 0.496 seconds.
+
+New:
+Saved 1000 in 2.655
+Generated 1000 256x256x3 samples in 0.683 seconds.
+
+"""
