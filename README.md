@@ -24,7 +24,8 @@ Current TODO:
 - Make an option to export a pickle file
 - Add more warnings, tracebacks, and comments
 - Allow different classes to have different frequencies (currently only a single-hardset value)
-- 
+
 Examples:
 5-labels (circles, lines, triangles, squares, pentagons):
+
 ![00020](https://github.com/JoshWarn/MultiLabelToyDatasetGenerator/assets/70070682/9b882357-44e8-4934-828c-c8d49bf0ae25)
