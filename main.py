@@ -3,7 +3,6 @@ import skimage
 import warnings
 import random
 import traceback
-import math
 from PIL import Image
 import os
 import time
@@ -33,6 +32,8 @@ def generate_multilabel_toy_dataset(sample_number=1000, x_res=256, y_res=256, ch
     verbose         - if info about building the dataset should be printed; progress bar & time taken.
     all_channels_Same_optim - an optimization for if all channels are the same.
                       By default, this is enabled. Channels being different isn't supported (yet).
+    TODO Make an option to export to a pickle file.
+    TODO add more warnings and tracebacks.
     """
 
     if save_to_folder is True:  # Detects if folder exists or has files; makes folder if it doesn't exist.
@@ -174,8 +175,8 @@ def draw_shapes(image, label, size, frequency, v_max, x_res, y_res, all_channels
                         image[j][rr, cc] = v_max
     return image
 
-
-generate_multilabel_toy_dataset(1000, path="Dataset", save_to_folder=True)
+# Example usage:
+# images = generate_multilabel_toy_dataset(10000, label_count=3, frequency=[2, 20], path="Dataset", save_to_folder=True)
 
 
 """
@@ -186,4 +187,7 @@ Generated 1000 256x256x3 samples in 0.496 seconds.
 New:
 Saved 1000 in 2.585
 Generated 1000 256x256x3 samples in 0.386 seconds.
+
+Generated 10000 256x256x3 3 labels in 6.8 seconds
+Generated 10000 256x256x3 5 labels in 14.2 seconds
 """
