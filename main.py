@@ -6,11 +6,12 @@ import traceback
 import math
 from PIL import Image
 import os
+import time
 
 
 def generate_multilabel_toy_dataset(sample_number=1000, x_res=256, y_res=256, channels=3, v_min=0, v_max=1,
                                     size=[10, 40], frequency=[2, 20], label_count=2, label_frequency=0.5,
-                                    path=None, save_to_folder=False):
+                                    path=None, save_to_folder=False, verbose=True):
     """
     Creates a dataset with basic shape perimeters; 1, 2, 3, 4... = circle, line, triangle, square etc...
 
@@ -27,6 +28,9 @@ def generate_multilabel_toy_dataset(sample_number=1000, x_res=256, y_res=256, ch
     ~~ Saving options ~~
     path            - where to save the dataset to
     save_to_folder  - if data should be saved
+
+    ~~ Misc ~~
+    verbose         - if info about building the dataset should be printed; progress bar & time taken.
     """
 
     if save_to_folder is True:  # Detects if folder exists or has files; makes folder if it doesn't exist.
@@ -79,6 +83,8 @@ def generate_multilabel_toy_dataset(sample_number=1000, x_res=256, y_res=256, ch
         if size[1] > x_res or size[1] > y_res:
             warnings.warn(f"Size of {size[1]} out of supported range!")
 
+    start_time = time.time()
+
     image_matrix = np.full((sample_number, channels, y_res, x_res), v_min, dtype=np.uint8)
     label_matrix = np.zeros((sample_number, label_count), dtype=np.uint8)
 
@@ -99,6 +105,9 @@ def generate_multilabel_toy_dataset(sample_number=1000, x_res=256, y_res=256, ch
             for i in range(len(label_matrix)):
                 txt_str = str(label_matrix[i]).replace("[", "").replace("]", "").replace(" ", ",")
                 f.write(f"{txt_str}\n")
+
+    if verbose:
+        print(f"Dataset of {sample_number} {x_res}x{y_res}x{channels} samples built in {time.time()-start_time} seconds.")
 
     return image_matrix, label_matrix
 
@@ -143,4 +152,4 @@ def draw_shapes(image, label, size, frequency, v_max, x_res, y_res):
     return image
 
 
-generate_multilabel_toy_dataset(100, path="Dataset", save_to_folder=True)
+generate_multilabel_toy_dataset(10000, path="Dataset", save_to_folder=True)
