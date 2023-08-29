@@ -34,6 +34,8 @@ def generate_multilabel_toy_dataset(sample_number=1000, x_res=256, y_res=256, ch
                       By default, this is enabled. Channels being different isn't supported (yet).
     TODO Make an option to export to a pickle file.
     TODO add more warnings and tracebacks.
+    TODO allow different classes to have different frequencies
+    TODO add option to get rid of no-label images
     """
 
     if save_to_folder is True:  # Detects if folder exists or has files; makes folder if it doesn't exist.
