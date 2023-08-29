@@ -11,7 +11,7 @@ import time
 
 def generate_multilabel_toy_dataset(sample_number=1000, x_res=256, y_res=256, channels=3, v_min=0, v_max=1,
                                     size=[10, 40], frequency=[2, 20], label_count=2, label_frequency=0.5,
-                                    path=None, save_to_folder=False, verbose=True):
+                                    path=None, save_to_folder=False, verbose=True, all_channels_same_optim=True):
     """
     Creates a dataset with basic shape perimeters; 1, 2, 3, 4... = circle, line, triangle, square etc...
 
@@ -31,6 +31,8 @@ def generate_multilabel_toy_dataset(sample_number=1000, x_res=256, y_res=256, ch
 
     ~~ Misc ~~
     verbose         - if info about building the dataset should be printed; progress bar & time taken.
+    all_channels_Same_optim - an optimization for if all channels are the same.
+                      By default, this is enabled. Channels being different isn't supported (yet).
     """
 
     if save_to_folder is True:  # Detects if folder exists or has files; makes folder if it doesn't exist.
@@ -92,7 +94,7 @@ def generate_multilabel_toy_dataset(sample_number=1000, x_res=256, y_res=256, ch
         for j in range(label_count):
             if random.random() > 1 - label_frequency:   # determine if a class should be used in an image
                 label_matrix[i][j] = 1                 # set label to true
-                image_matrix[i] = draw_shapes(image_matrix[i], j, size, frequency, v_max, x_res, y_res)
+                image_matrix[i] = draw_shapes(image_matrix[i], j, size, frequency, v_max, x_res, y_res, all_channels_same_optim)
 
     image_matrix = np.transpose(image_matrix, (0, 2, 3, 1))     # Changing the order of dimensions
     if save_to_folder is True:
@@ -112,7 +114,7 @@ def generate_multilabel_toy_dataset(sample_number=1000, x_res=256, y_res=256, ch
     return image_matrix, label_matrix
 
 
-def draw_shapes(image, label, size, frequency, v_max, x_res, y_res):
+def draw_shapes(image, label, size, frequency, v_max, x_res, y_res, all_channels_same):
     # Determines frequency of item in image; how many times to run the item loop.
     if type(frequency) is list:
         item_count = random.randint(frequency[0], frequency[1])   # Determines number of items to place in
@@ -132,19 +134,37 @@ def draw_shapes(image, label, size, frequency, v_max, x_res, y_res):
 
         # have to add 2 to the label to generate the correct number of points; generates 1 extra.
         # Generate an initial point at an angle of 0; maybe consider randomizing this later?
-        angle_list = (np.linspace(0, 2 * np.pi, label + 2)+random.random()*np.pi) % (2*np.pi)
+        # angle_list = (np.linspace(0, 2 * np.pi, label + 2)+random.random()*np.pi) % (2*np.pi)
+        angle_list = ((np.linspace(0, 1, label + 2) + random.random()) % 1) * 2*np.pi
         x_pos_list = (ry + np.cos(angle_list[0:-1]) * item_size).astype(int)
         y_pos_list = (cx + np.sin(angle_list[0:-1]) * item_size).astype(int)
 
-        for j in range(len(image)):
-            if label == 0:  # draw circle
-                rr, cc = skimage.draw.circle_perimeter(ry, cx, int(item_size/2))
-                image[j][rr, cc] = v_max
-
-            # else, generate the line(s)from the circle's perimeter.
+        if all_channels_same:
+            if label == 0:
+                rr, cc = skimage.draw.circle_perimeter(ry, cx, int(item_size / 2))
+                image[0][rr, cc] = v_max
+            elif label == 1:
+                for k in range(len(x_pos_list) - 1):
+                    rr, cc = skimage.draw.line(y_pos_list[k], x_pos_list[k], y_pos_list[k + 1], x_pos_list[k + 1])
+                    image[0][rr, cc] = v_max
             else:
+                for k in range(len(x_pos_list)):
+                    rr, cc = skimage.draw.line(y_pos_list[k - 1], x_pos_list[k - 1], y_pos_list[k], x_pos_list[k])
+                    image[0][rr, cc] = v_max
+
+            # sets all channels to the first channel
+            for j in range(len(image)-1):
+                image[j + 1] = image[0]
+
+        else:
+            for j in range(len(image)):
+                if label == 0:  # draw circle
+                    rr, cc = skimage.draw.circle_perimeter(ry, cx, int(item_size/2))
+                    image[j][rr, cc] = v_max
+
+                # else, generate the line(s)from the circle's perimeter.
                 # minor speed improvement to stop overdrawing lines twice for lines:
-                if label == 1:
+                elif label == 1:
                     for k in range(len(x_pos_list)-1):
                         rr, cc = skimage.draw.line(y_pos_list[k], x_pos_list[k], y_pos_list[k+1], x_pos_list[k+1])
                         image[j][rr, cc] = v_max
@@ -152,10 +172,6 @@ def draw_shapes(image, label, size, frequency, v_max, x_res, y_res):
                     for k in range(len(x_pos_list)):
                         rr, cc = skimage.draw.line(y_pos_list[k-1], x_pos_list[k-1], y_pos_list[k], x_pos_list[k])
                         image[j][rr, cc] = v_max
-
-            if label >= 2:  # draw normal n-gon
-                # TODO NOT implemented!
-                print("Polygon drawing not implemented!")
     return image
 
 
@@ -168,7 +184,6 @@ Saved 1000 256x256x3 samples in 2.519 seconds.
 Generated 1000 256x256x3 samples in 0.496 seconds.
 
 New:
-Saved 1000 in 2.655
-Generated 1000 256x256x3 samples in 0.683 seconds.
-
+Saved 1000 in 2.585
+Generated 1000 256x256x3 samples in 0.386 seconds.
 """
