@@ -24,6 +24,7 @@ Current TODO:
 - Make an option to export a pickle file
 - Add more warnings, tracebacks, and comments
 - Allow different classes to have different frequencies (currently only a single-hardset value)
+- Add an option to get rid of no-label images (all zeros)
 
 Examples:
 256x256x3 5-labels (circles, lines, triangles, squares, pentagons):
