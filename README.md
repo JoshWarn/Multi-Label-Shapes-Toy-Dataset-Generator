@@ -27,7 +27,7 @@ Current TODO:
 - Add an option to get rid of no-label images (all zeros)
 
 Examples:
-256x256x3 5-labels (circles, lines, triangles, squares, pentagons):
+256x256x3 5-labels dataset with all 5 classes (circles, lines, triangles, squares, pentagons):
 
 ![00020](https://github.com/JoshWarn/MultiLabelToyDatasetGenerator/assets/70070682/9b882357-44e8-4934-828c-c8d49bf0ae25)
 
