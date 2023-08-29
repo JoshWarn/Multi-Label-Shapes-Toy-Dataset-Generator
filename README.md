@@ -30,6 +30,6 @@ Examples:
 
 ![00020](https://github.com/JoshWarn/MultiLabelToyDatasetGenerator/assets/70070682/9b882357-44e8-4934-828c-c8d49bf0ae25)
 
-Generation times (may vary on PC):
-- 10000 256x256x3 3-label: generated in 6.8s, saved to disk in 31s.
+Generation times (may vary on differing hardware):
+- 10000 256x256x3 3-label: generated in 06.8s, saved to disk in 31s.
 - 10000 256x256x3 5-label: generated in 14.2s, saved to disk in 39s.
