@@ -51,7 +51,7 @@ def generate_multilabel_toy_dataset(sample_number=1000, x_res=256, y_res=256, ch
     TODO add more warnings and tracebacks.
     TODO rewrite comments, descriptions.
     TODO if files detected in folder, ask if they should be overwritten.
-    TODO error with random colorization! Only Yellow, Pink, and Red showing up!
+    TODO Fix issue with creation of sub-dataset folder when image_folder or dataset not to-be saved!
     """
 
     # Warnings and input checking
@@ -243,15 +243,19 @@ def progressbar(percent, bar_len=50):
 
 
 # Example usage:
-images, labels = generate_multilabel_toy_dataset(10000, label_count=5, frequency=[2, 20], path="Dataset",
-                                         export_type="image_folder", random_channel_classes=True)
+# images, labels = generate_multilabel_toy_dataset(10000, label_count=5, frequency=[2, 20], path="Dataset",
+#                                                  export_type="image_folder", random_channel_classes=False)
 
 # import timeit
-#print(timeit.repeat("generate_multilabel_toy_dataset(10000, label_count=5, frequency=[2, 20], path='Dataset', export_type=Non)",
-#                    "from __main__ import generate_multilabel_toy_dataset", repeat=10, number=1))
+# print(timeit.repeat("generate_multilabel_toy_dataset(10000, label_count=5, frequency=[2, 20], path='Dataset', export_type=None)",
+#                     "from __main__ import generate_multilabel_toy_dataset", repeat=6, number=1))
 """
 Time statistics:
-8/29/2023 6:15 PM
+8/29/23 6:15 PM
 10k-3l: 6.9095, 6.965, 7.092, 7.134, 6.986
 10k-5l: 14.293532099982258, 14.326442399993539, 14.194133099983446, 14.242385699995793, 14.304134599980898
+
+8/30/23 7:43 PM
+10k-3l: 6.941822100023273, 6.826388500048779, 6.851339500048198, 6.905877300014254, 7.020793200004846, 6.8281946000061
+10k-5l: 14.58191119995899, 15.44085159996757, 15.73625730001367, 14.85148279997520, 14.32096139999339, 14.11768680001841
 """
