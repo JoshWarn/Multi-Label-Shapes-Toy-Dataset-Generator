@@ -1,13 +1,15 @@
 # Multi-Label Toy Dataset Generator
 
 Multi-label neural networks can be challenging to make.
-With many multilabel datasets being text, difficult to find, or having subjective, questionable labels, I created this generator to eliminate one point of error when making multi-label NNs; the dataset.
+With many multilabel datasets being text, difficult to find, or having subjective questionable labels, I created this generator to eliminate one point of error when making multi-label NNs; the dataset.
 
 This generator makes it easy to confirm that a neural network is functioning as expected.
-The recommended use case is to create an easy dataset that any neural network should do well on; however, if robustness is desired, the difficulty can be increased.
+
+The recommended use case is to create an easy dataset that any neural network should do well on as a basic verification that everything is working as expected; however, if robustness is desired, the difficulty can be increased.
+
 With this generator:
-- images and labels are easily verifiable and boolean
-- difficulty can be easily adjusted using generation parameters
+- Images and labels are easily verifiable.
+- Dataset difficulty can be easily adjusted using generation parameters.
 
 Generation options include:
 - number of samples to generate
@@ -34,5 +36,5 @@ Examples:
 Durations to generate and save datasets (may vary on differing hardware):
 | Generation Parameters  | Generated (s)  | Generated + Saved (s) |
 | :------------ |:---------------:| :-----:|
-| 10000 256x256x3 3-label| 6.8 | 31 |
-| 10000 256x256x3 5-label| 14.2| 39 |
+| 10,000 256x256x3 3-label| 6.8 | 31 |
+| 10,000 256x256x3 5-label| 14.2| 39 |
