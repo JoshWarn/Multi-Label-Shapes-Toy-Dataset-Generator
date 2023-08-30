@@ -12,12 +12,12 @@ With this generator:
 - Dataset difficulty can be easily adjusted using generation parameters.
 
 Generation options include:
-- number of samples to generate
-- x_resolution, y_resolution, channels
-- size of shapes (random between bounds or hard-set)
-- frequency of shapes in image (random between bounds or hard-set)
-- number of labels
-- frequency of images to have a label
+- Number of samples
+- X_res, R_res, Channels
+- Number of labels
+- Shape Sizes (random between bounds or hard-set)
+- Frequency of shapes in image (random between bounds or hard-set)
+- Frequency of images to have a label (linear space between bounds or hard-set)
 
 Additional options:
 - Exporting the dataset into an image-folder
