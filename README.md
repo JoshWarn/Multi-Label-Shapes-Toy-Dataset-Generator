@@ -23,10 +23,12 @@ Additional options:
 - Exporting the dataset into an image-folder
 
 Current TODO:
-- Make an option to export a pickle file
 - Add more warnings, tracebacks, and comments
-- Allow different classes to have different frequencies (currently only a single-hardset value)
-- Add an option to get rid of no-label images (all zeros)
+- Add an option to get rid of no-label images (all zeros).
+- Add a progress bar.
+- Add channel-specific classes/shapes (may later be determined out-of-project-scope).
+- ~~Make an option to export a pickle file~~ (Done 8/29/23)
+- ~~Allow different classes to have different frequencies (currently only a single-hardset value)~~ (Done 8/29/23)
 
 Examples:
 256x256x3 5-labels dataset with all 5 classes (circles, lines, triangles, squares, pentagons):
