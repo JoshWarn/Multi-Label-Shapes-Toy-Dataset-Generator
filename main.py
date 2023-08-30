@@ -1,16 +1,31 @@
-import numpy as np
-import skimage
-import warnings
-import traceback
-from PIL import Image
 import os
 import time
 import pickle
-import timeit
+import warnings
+
+import numpy as np
+from PIL import Image
+import skimage
+
+# Copyright (c) 2023 Joshua Warnasch (Light MIT License)
+
+# Permission is freely granted to persons obtaining a copy of this software and
+# documentation files (the "Software"), to deal in the Software without limits
+# such as rights to use/copy/modify/merge/publish/distribute/sublicense and/or
+# sell copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+
+# These notices shall be carried in all copies/branches of the Software.
+
+# SOFTWARE IS PROVIDED "AS IS" WITHOUT ANY IMPLIED/EXPRESSED WARRANTY, INCLUDING
+# BUT NOT LIMITED TO MERCHANTABILITY/FITNESS/NONINFRINGEMENT. HOLDERS SHALL NOT
+# BE LIABLE FOR CLAIMS/DAMAGES/LIABILITY, WHETHER IN ACTION OF CONTRACT, TORT OR
+# OTHERWISE, ARISING DUE TO ANY DEALINGS IN THE SOFTWARE.
+
 
 def generate_multilabel_toy_dataset(sample_number=1000, x_res=256, y_res=256, channels=3, v_min=0, v_max=1,
                                     size=[10, 40], frequency=[2, 20], label_count=2, label_frequency=0.5,
-                                    replace_no_label_images=False, path=None, export_type=None, verbose=True,
+                                    path=None, export_type=None, verbose=True,
                                     all_channels_same_optim=True, random_seed=0):
     """
     Creates a dataset with basic shape perimeters; 1, 2, 3, 4... = circle, line, triangle, square etc...
@@ -24,7 +39,6 @@ def generate_multilabel_toy_dataset(sample_number=1000, x_res=256, y_res=256, ch
     frequency       - how many items to draw on the image; can be set as a hard value or a range using [min, max]
     label_count     - number of classes to generate dataset with
     label_frequency - how frequently to have a label occur in an image; may be int or [max, min].
-    replace_no_label_images - if images with no labels should be re-generated with labels; boolean.
 
     ~~ Saving options ~~
     path            - where to save the dataset to
@@ -32,27 +46,20 @@ def generate_multilabel_toy_dataset(sample_number=1000, x_res=256, y_res=256, ch
 
     ~~ Misc ~~
     verbose         - if info about building the dataset should be printed; progress bar & time taken.
-    all_channels_Same_optim - an optimization for if all channels are the same.
+    all_channels_same_optim - an optimization for if all channels are the same.
                       By default, this is enabled. Channels being different isn't supported (yet).
     progress_bar    - if a dataset-generation progress bar should be made. True/False
     TODO add more warnings and tracebacks.
-    TODO add option to get rid of no-label images
-    TODO add progress bar
     TODO rewrite comments, descriptions.
     TODO add channel specific classes(?)
     """
 
+    # Warnings and input checking
     valid_exports = ["image_folder", "pickle", None]
     if export_type not in valid_exports:
         warnings.warn(f"Export type {export_type} not supported! Valid list: {valid_exports}")
         raise BaseException("Unexpected export type!")
 
-    if valid_exports is not None:  # Detects if folder exists or has files; makes folder if it doesn't exist.
-        if not os.path.isdir(path):
-            os.makedirs(path)
-            os.makedirs(f"{path}\\Dataset")
-
-    # Warnings and input checking
     if (v_min != 0 or v_max != 1) and export_type == "image_folder":
         warnings.warn(f"v_min and v_max of 0-1 should be used when saving images!"
                       f"v_min and v_max of {v_min} and {v_max} found.")
@@ -104,12 +111,19 @@ def generate_multilabel_toy_dataset(sample_number=1000, x_res=256, y_res=256, ch
         if size[1] > x_res or size[1] > y_res:
             warnings.warn(f"Size of {size[1]} out of supported range!")
 
+        # Detects if folder exists or has files; makes folder if it doesn't exist.
+        if valid_exports is not None:
+            if not os.path.isdir(path):
+                os.makedirs(path)
+                os.makedirs(f"{path}\\Dataset")
+
     # Value initialization
     start_time = time.time()
     np.random.seed(seed=random_seed)
     image_matrix = np.full((sample_number, channels, y_res, x_res), v_min, dtype=np.uint8)
     label_matrix = np.zeros((sample_number, label_count), dtype=np.uint8)
 
+    # Initializes values into a sample_num x label_count matrix with a given frequency
     for i in range(label_count):
         vertical_label_matrix = np.random.choice([0, 1], sample_number, p=label_frequency_list[i])
         label_matrix[:, i] = vertical_label_matrix
@@ -169,9 +183,8 @@ def draw_shapes(image, label, size, frequency, v_max, x_res, y_res, all_channels
         ry = np.random.randint(0 + item_size, y_res - item_size - 1)
         cx = np.random.randint(0 + item_size, x_res - item_size - 1)
 
-        # have to add 2 to the label to generate the correct number of points; generates 1 extra.
-        # Generate an initial point at an angle of 0; maybe consider randomizing this later?
-        # angle_list = (np.linspace(0, 2 * np.pi, label + 2)+random.random()*np.pi) % (2*np.pi)
+        # Have to add 2 to the label to generate the correct number of points;
+        # generates 1 extra to correctly space points in the linspace function.
         angle_list = ((np.linspace(0, 1, label + 2) + np.random.random_sample()) % 1) * 2*np.pi
         x_pos_list = (ry + np.cos(angle_list[0:-1]) * item_size).astype(int)
         y_pos_list = (cx + np.sin(angle_list[0:-1]) * item_size).astype(int)
@@ -199,8 +212,6 @@ def draw_shapes(image, label, size, frequency, v_max, x_res, y_res, all_channels
                     rr, cc = skimage.draw.circle_perimeter(ry, cx, int(item_size/2))
                     image[j][rr, cc] = v_max
 
-                # else, generate the line(s)from the circle's perimeter.
-                # minor speed improvement to stop overdrawing lines twice for lines:
                 elif label == 1:
                     for k in range(len(x_pos_list)-1):
                         rr, cc = skimage.draw.line(y_pos_list[k], x_pos_list[k], y_pos_list[k+1], x_pos_list[k+1])
@@ -233,9 +244,10 @@ def progressbar(percent, bar_len=50):
 
 
 # Example usage:
-images = generate_multilabel_toy_dataset(10000, label_count=3, frequency=[2, 20], path="Dataset", export_type='pickle', progress_bar=True)
+images = generate_multilabel_toy_dataset(10000, label_count=3, frequency=[2, 20], path="Dataset",
+                                         export_type='pickle', progress_bar=True)
 
-
+# import timeit
 #print(timeit.repeat("generate_multilabel_toy_dataset(10000, label_count=5, frequency=[2, 20], path='Dataset', export_type=Non)",
 #                    "from __main__ import generate_multilabel_toy_dataset", repeat=10, number=1))
 """
