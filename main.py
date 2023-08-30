@@ -177,13 +177,14 @@ def draw_shapes(image, label, size, frequency, v_max, x_res, y_res, random_chann
         # select random channels to place images on
 
         # number of channels to use
-        num_used_channels = np.random.randint(1, len(image))
-        channels_used = np.array([1] * num_used_channels + [0]*(len(image)-num_used_channels), dtype=bool)
+        num_used_channels = np.random.randint(1, len(image) + 1)
+        channels_used = np.array([True] * num_used_channels + [False]*(len(image)-num_used_channels), dtype=bool)
         np.random.shuffle(channels_used)    # Randomize what channels used
     else:
         # Select all channels to be used
         channels_used = np.ones(len(image), dtype=bool)
 
+    first_channel_used = np.argmax(channels_used == True)
     for i in range(item_count):
         # Determining size of sample
         if type(size) is list:
@@ -201,7 +202,6 @@ def draw_shapes(image, label, size, frequency, v_max, x_res, y_res, random_chann
         x_pos_list = (ry + np.cos(angle_list[0:-1]) * item_size).astype(int)
         y_pos_list = (cx + np.sin(angle_list[0:-1]) * item_size).astype(int)
 
-        first_channel_used = np.argmax(channels_used is True)
         if label == 0:
             rr, cc = skimage.draw.circle_perimeter(ry, cx, int(item_size / 2))
             image[first_channel_used][rr, cc] = v_max
@@ -214,10 +214,10 @@ def draw_shapes(image, label, size, frequency, v_max, x_res, y_res, random_chann
                 rr, cc = skimage.draw.line(y_pos_list[k - 1], x_pos_list[k - 1], y_pos_list[k], x_pos_list[k])
                 image[first_channel_used][rr, cc] = v_max
 
-        # sets all other channels to the first channel if used
-        for j in range(first_channel_used+1, len(image)):
-            if channels_used[j]:
-                image[j] = image[first_channel_used]
+    # sets all other channels to the first channel if used
+    for j in range(first_channel_used+1, len(image)):
+        if channels_used[j]:
+            image[j] = image[first_channel_used]
 
     return image
 
