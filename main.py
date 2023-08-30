@@ -25,8 +25,8 @@ import skimage
 
 def generate_multilabel_toy_dataset(sample_number=1000, x_res=256, y_res=256, channels=3, v_min=0, v_max=1,
                                     size=[10, 40], frequency=[2, 20], label_count=2, label_frequency=0.5,
-                                    path=None, export_type=None, verbose=True,
-                                    all_channels_same_optim=True, random_seed=0):
+                                    path=None, export_type=None, verbose=True, random_seed=0,
+                                    random_channel_classes=False):
     """
     Creates a dataset with basic shape perimeters; 1, 2, 3, 4... = circle, line, triangle, square etc...
 
@@ -46,12 +46,12 @@ def generate_multilabel_toy_dataset(sample_number=1000, x_res=256, y_res=256, ch
 
     ~~ Misc ~~
     verbose         - if info about building the dataset should be printed; progress bar & time taken.
-    all_channels_same_optim - an optimization for if all channels are the same.
-                      By default, this is enabled. Channels being different isn't supported (yet).
-    progress_bar    - if a dataset-generation progress bar should be made. True/False
+    random_seed     - sets random state; default 0.
+    random_channel_classes - allows channels to show up on random channels. Default disabled.
     TODO add more warnings and tracebacks.
     TODO rewrite comments, descriptions.
-    TODO add channel specific classes(?)
+    TODO if files detected in folder, ask if they should be overwritten.
+    TODO error with random colorization! Only Yellow, Pink, and Red showing up!
     """
 
     # Warnings and input checking
@@ -133,9 +133,9 @@ def generate_multilabel_toy_dataset(sample_number=1000, x_res=256, y_res=256, ch
             progressbar(i/sample_number)
         for j in range(label_count):
             if label_matrix[i][j] == 1:
-                image_matrix[i] = draw_shapes(image_matrix[i], j, size, frequency, v_max, x_res, y_res, all_channels_same_optim)
+                image_matrix[i] = draw_shapes(image_matrix[i], j, size, frequency, v_max, x_res, y_res, random_channel_classes)
     if verbose:
-        progressbar(1)
+        progressbar(1.)
 
     image_matrix = np.transpose(image_matrix, (0, 2, 3, 1))     # Changing the order of dimensions
     if export_type == "image_folder":
@@ -165,12 +165,24 @@ def generate_multilabel_toy_dataset(sample_number=1000, x_res=256, y_res=256, ch
     return image_matrix, label_matrix
 
 
-def draw_shapes(image, label, size, frequency, v_max, x_res, y_res, all_channels_same):
+def draw_shapes(image, label, size, frequency, v_max, x_res, y_res, random_channel_classes):
     # Determines frequency of item in image; how many times to run the item loop.
     if type(frequency) is list:
         item_count = np.random.randint(frequency[0], frequency[1])         # Determines number of items to place in
     else:
         item_count = frequency
+
+    # Selecting what channel(s) to put shapes on:
+    if random_channel_classes:
+        # select random channels to place images on
+
+        # number of channels to use
+        num_used_channels = np.random.randint(1, len(image))
+        channels_used = np.array([1] * num_used_channels + [0]*(len(image)-num_used_channels), dtype=bool)
+        np.random.shuffle(channels_used)    # Randomize what channels used
+    else:
+        # Select all channels to be used
+        channels_used = np.ones(len(image), dtype=bool)
 
     for i in range(item_count):
         # Determining size of sample
@@ -189,37 +201,24 @@ def draw_shapes(image, label, size, frequency, v_max, x_res, y_res, all_channels
         x_pos_list = (ry + np.cos(angle_list[0:-1]) * item_size).astype(int)
         y_pos_list = (cx + np.sin(angle_list[0:-1]) * item_size).astype(int)
 
-        if all_channels_same:
-            if label == 0:
-                rr, cc = skimage.draw.circle_perimeter(ry, cx, int(item_size / 2))
-                image[0][rr, cc] = v_max
-            elif label == 1:
-                for k in range(len(x_pos_list) - 1):
-                    rr, cc = skimage.draw.line(y_pos_list[k], x_pos_list[k], y_pos_list[k + 1], x_pos_list[k + 1])
-                    image[0][rr, cc] = v_max
-            else:
-                for k in range(len(x_pos_list)):
-                    rr, cc = skimage.draw.line(y_pos_list[k - 1], x_pos_list[k - 1], y_pos_list[k], x_pos_list[k])
-                    image[0][rr, cc] = v_max
-
-            # sets all channels to the first channel
-            for j in range(len(image)-1):
-                image[j + 1] = image[0]
-
+        first_channel_used = np.argmax(channels_used is True)
+        if label == 0:
+            rr, cc = skimage.draw.circle_perimeter(ry, cx, int(item_size / 2))
+            image[first_channel_used][rr, cc] = v_max
+        elif label == 1:
+            for k in range(len(x_pos_list) - 1):
+                rr, cc = skimage.draw.line(y_pos_list[k], x_pos_list[k], y_pos_list[k + 1], x_pos_list[k + 1])
+                image[first_channel_used][rr, cc] = v_max
         else:
-            for j in range(len(image)):
-                if label == 0:  # draw circle
-                    rr, cc = skimage.draw.circle_perimeter(ry, cx, int(item_size/2))
-                    image[j][rr, cc] = v_max
+            for k in range(len(x_pos_list)):
+                rr, cc = skimage.draw.line(y_pos_list[k - 1], x_pos_list[k - 1], y_pos_list[k], x_pos_list[k])
+                image[first_channel_used][rr, cc] = v_max
 
-                elif label == 1:
-                    for k in range(len(x_pos_list)-1):
-                        rr, cc = skimage.draw.line(y_pos_list[k], x_pos_list[k], y_pos_list[k+1], x_pos_list[k+1])
-                        image[j][rr, cc] = v_max
-                else:
-                    for k in range(len(x_pos_list)):
-                        rr, cc = skimage.draw.line(y_pos_list[k-1], x_pos_list[k-1], y_pos_list[k], x_pos_list[k])
-                        image[j][rr, cc] = v_max
+        # sets all other channels to the first channel if used
+        for j in range(first_channel_used+1, len(image)):
+            if channels_used[j]:
+                image[j] = image[first_channel_used]
+
     return image
 
 
@@ -244,8 +243,8 @@ def progressbar(percent, bar_len=50):
 
 
 # Example usage:
-images = generate_multilabel_toy_dataset(10000, label_count=3, frequency=[2, 20], path="Dataset",
-                                         export_type='pickle', progress_bar=True)
+images, labels = generate_multilabel_toy_dataset(10000, label_count=5, frequency=[2, 20], path="Dataset",
+                                         export_type="image_folder", random_channel_classes=True)
 
 # import timeit
 #print(timeit.repeat("generate_multilabel_toy_dataset(10000, label_count=5, frequency=[2, 20], path='Dataset', export_type=Non)",
