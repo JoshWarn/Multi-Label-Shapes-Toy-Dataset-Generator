@@ -26,10 +26,11 @@ def generate_multilabel_toy_dataset(sample_number=1000, x_res=256, y_res=256, ch
     frequency       - how many items to draw on the image; can be set as a hard value or a range using [min, max]
     label_count     - number of classes to generate dataset with
     label_frequency - how frequently to have a label occur in an image; may be int or [max, min].
+    replace_no_label_images - if images with no labels should be re-generated with labels; boolean.
 
     ~~ Saving options ~~
     path            - where to save the dataset to
-    save_to_folder  - if data should be saved
+    export_type  - if data should be saved in a certain format; None, "image_folder", "pickle".
 
     ~~ Misc ~~
     verbose         - if info about building the dataset should be printed; progress bar & time taken.
@@ -40,6 +41,8 @@ def generate_multilabel_toy_dataset(sample_number=1000, x_res=256, y_res=256, ch
     TODO add option to get rid of no-label images
     TODO add progress bar
     TODO rewrite comments, descriptions.
+    TODO add channel specific classes(?)
+    TODO add set seed for randomization.
     """
 
     valid_exports = ["image_folder", "pickle", None]
