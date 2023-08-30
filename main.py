@@ -6,7 +6,7 @@ import traceback
 from PIL import Image
 import os
 import time
-
+import timeit
 
 def generate_multilabel_toy_dataset(sample_number=1000, x_res=256, y_res=256, channels=3, v_min=0, v_max=1,
                                     size=[10, 40], frequency=[2, 20], label_count=2, label_frequency=0.5,
@@ -72,6 +72,18 @@ def generate_multilabel_toy_dataset(sample_number=1000, x_res=256, y_res=256, ch
     else:
         warnings.warn(f"Frequency of {frequency} not supported!")
 
+    # Warnings and processing of label frequency
+    if type(label_frequency) is int or float:
+        label_frequency_list = [[1 - label_frequency, label_frequency] for label in range(label_count)]
+        if label_frequency >= 1 or label_frequency <= 0:
+            warnings.warn(f"Label Frequency of {label_frequency} not supported!")
+    else:
+        # Make a list between min and max frequency; currently just linear
+        label_frequency_temp = np.linspace(label_frequency[0], label_frequency[1], label_count)
+        label_frequency_list = [[1-label_freq, label_freq] for label_freq in label_frequency_temp]
+        if len(label_frequency) != 2:
+            warnings.warn(f"Length of Label Frequency {len(label_frequency)} not supported!")
+
     # Warnings regarding size of items in image:
     if type(size) == int or type(size) == float:
         if size < 0 or size > x_res or size > y_res:
@@ -93,10 +105,19 @@ def generate_multilabel_toy_dataset(sample_number=1000, x_res=256, y_res=256, ch
     image_matrix = np.full((sample_number, channels, y_res, x_res), v_min, dtype=np.uint8)
     label_matrix = np.zeros((sample_number, label_count), dtype=np.uint8)
 
+    # Make label matrix before entering into loop! It's much faster... probably.
+
+    for i in range(label_count):
+        vertical_label_matrix = np.random.choice([0, 1], sample_number, p=label_frequency_list[i])
+        label_matrix[:, i] = vertical_label_matrix
+
+    # print(label_matrix[0:100])
+
     for i in range(sample_number):
         for j in range(label_count):
-            if random.random() > 1 - label_frequency:   # determine if a class should be used in an image
-                label_matrix[i][j] = 1                 # set label to true
+            #if random.random() > label_frequency_list[j][0]:   # determine if a class should be used in an image
+            #    label_matrix[i][j] = 1                 # set label to true
+            if label_matrix[i][j] == 1:
                 image_matrix[i] = draw_shapes(image_matrix[i], j, size, frequency, v_max, x_res, y_res, all_channels_same_optim)
 
     image_matrix = np.transpose(image_matrix, (0, 2, 3, 1))     # Changing the order of dimensions
@@ -181,15 +202,11 @@ def draw_shapes(image, label, size, frequency, v_max, x_res, y_res, all_channels
 # images = generate_multilabel_toy_dataset(10000, label_count=3, frequency=[2, 20], path="Dataset", save_to_folder=True)
 
 
+# print(timeit.repeat("generate_multilabel_toy_dataset(10000, label_count=5, frequency=[2, 20], path='Dataset', save_to_folder=False)",
+#                     "from __main__ import generate_multilabel_toy_dataset", repeat=10, number=1))
 """
 Time statistics:
-Saved 1000 256x256x3 samples in 2.519 seconds.
-Generated 1000 256x256x3 samples in 0.496 seconds.
-
-New:
-Saved 1000 in 2.585
-Generated 1000 256x256x3 samples in 0.386 seconds.
-
-Generated 10000 256x256x3 3 labels in 6.8 seconds
-Generated 10000 256x256x3 5 labels in 14.2 seconds
+8/29/2023 6:15 PM
+10k-3l: 6.9095, 6.965, 7.092, 7.134, 6.986
+10k-5l: 14.293532099982258, 14.326442399993539, 14.194133099983446, 14.242385699995793, 14.304134599980898
 """
