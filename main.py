@@ -116,12 +116,12 @@ def generate_multilabel_toy_dataset(sample_number=1000, x_res=256, y_res=256, ch
         label_matrix[:, i] = vertical_label_matrix
 
     for i in range(sample_number):
+        if progress_bar and i % 100 == 0:
+            progressbar(i/sample_number)
         for j in range(label_count):
             if label_matrix[i][j] == 1:
                 image_matrix[i] = draw_shapes(image_matrix[i], j, size, frequency, v_max, x_res, y_res, all_channels_same_optim)
-
-        if progress_bar and i%100 == 0:
-            progressbar((i+1)/sample_number)
+    progressbar(1)
 
     image_matrix = np.transpose(image_matrix, (0, 2, 3, 1))     # Changing the order of dimensions
     if export_type == "image_folder":
@@ -150,20 +150,20 @@ def generate_multilabel_toy_dataset(sample_number=1000, x_res=256, y_res=256, ch
 def draw_shapes(image, label, size, frequency, v_max, x_res, y_res, all_channels_same):
     # Determines frequency of item in image; how many times to run the item loop.
     if type(frequency) is list:
-        item_count = np.randint(frequency[0], frequency[1])         # Determines number of items to place in
+        item_count = np.random.randint(frequency[0], frequency[1])         # Determines number of items to place in
     else:
         item_count = frequency
 
     for i in range(item_count):
         # Determining size of sample
         if type(size) is list:
-            item_size = np.randint(size[0], size[1])
+            item_size = np.random.randint(size[0], size[1])
         else:
             item_size = size
 
         # Generate a circle within the range to use as bounds for the shape.
-        ry = np.randint(0 + item_size, y_res - item_size - 1)
-        cx = np.randint(0 + item_size, x_res - item_size - 1)
+        ry = np.random.randint(0 + item_size, y_res - item_size - 1)
+        cx = np.random.randint(0 + item_size, x_res - item_size - 1)
 
         # have to add 2 to the label to generate the correct number of points; generates 1 extra.
         # Generate an initial point at an angle of 0; maybe consider randomizing this later?
@@ -208,16 +208,19 @@ def draw_shapes(image, label, size, frequency, v_max, x_res, y_res, all_channels
     return image
 
 
-def progressbar(percent):
+def progressbar(percent, bar_len=50):
+    bar = int(percent*bar_len)
+    # Typically end="\r", but issues w/ IDEs not supporting "\r" resulting in slowdowns.
+    print(f"Progress: |{'█'*bar+ '-'*(bar_len-bar)}| {100*percent:f}%", end="\n")
     # This is just a placeholder!
 
 
 # Example usage:
-images = generate_multilabel_toy_dataset(10000, label_count=3, frequency=[2, 20], path="Dataset", export_type='pickle')
+images = generate_multilabel_toy_dataset(10000, label_count=3, frequency=[2, 20], path="Dataset", export_type='pickle', progress_bar=True)
 
 
-# print(timeit.repeat("generate_multilabel_toy_dataset(10000, label_count=5, frequency=[2, 20], path='Dataset', export_type=Non)",
-#                     "from __main__ import generate_multilabel_toy_dataset", repeat=10, number=1))
+#print(timeit.repeat("generate_multilabel_toy_dataset(10000, label_count=5, frequency=[2, 20], path='Dataset', export_type=Non)",
+#                    "from __main__ import generate_multilabel_toy_dataset", repeat=10, number=1))
 """
 Time statistics:
 8/29/2023 6:15 PM
