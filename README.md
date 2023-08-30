@@ -34,7 +34,7 @@ Examples:
 ![00020](https://github.com/JoshWarn/MultiLabelToyDatasetGenerator/assets/70070682/9b882357-44e8-4934-828c-c8d49bf0ae25)
 
 Durations to generate and save datasets (may vary on differing hardware):
-| Generation Parameters  | Generated (s)  | Generated + Saved (s) |
-| :------------ |:---------------:| :-----:|
-| 10,000 256x256x3 3-label| 6.8 | 31 |
-| 10,000 256x256x3 5-label| 14.2| 39 |
+| Generation Parameters  | Generated (s) | Generated + Image_Folder (s) | Generated + Pickle (s) |
+| :------------ |:---------------:|:-----:|:-----:|
+| 10,000 256x256x3 3-label| 6.8 | 31 | XX |
+| 10,000 256x256x3 5-label| 14.2| 39 | XX |
