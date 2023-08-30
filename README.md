@@ -26,6 +26,7 @@ Current TODO:
 - Add more warnings, tracebacks, and comments
 - Add an option to get rid of no-label images (all zeros).
 - Add a progress bar.
+- Add a set seed for random numbers.
 - Add channel-specific classes/shapes (may later be determined out-of-project-scope).
 - ~~Make an option to export a pickle file~~ (Done 8/29/23)
 - ~~Allow different classes to have different frequencies (currently only a single-hardset value)~~ (Done 8/29/23)
