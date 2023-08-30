@@ -1,7 +1,6 @@
 import numpy as np
 import skimage
 import warnings
-import random
 import traceback
 from PIL import Image
 import os
@@ -13,7 +12,7 @@ def generate_multilabel_toy_dataset(sample_number=1000, x_res=256, y_res=256, ch
                                     size=[10, 40], frequency=[2, 20], label_count=2, label_frequency=0.5,
                                     replace_no_label_images=False,
                                     path=None, export_type=None, verbose=True, all_channels_same_optim=True,
-                                    progress_bar=False):
+                                    progress_bar=False, random_seed=0):
     """
     Creates a dataset with basic shape perimeters; 1, 2, 3, 4... = circle, line, triangle, square etc...
 
@@ -42,7 +41,6 @@ def generate_multilabel_toy_dataset(sample_number=1000, x_res=256, y_res=256, ch
     TODO add progress bar
     TODO rewrite comments, descriptions.
     TODO add channel specific classes(?)
-    TODO add set seed for randomization.
     """
 
     valid_exports = ["image_folder", "pickle", None]
@@ -107,12 +105,11 @@ def generate_multilabel_toy_dataset(sample_number=1000, x_res=256, y_res=256, ch
         if size[1] > x_res or size[1] > y_res:
             warnings.warn(f"Size of {size[1]} out of supported range!")
 
+    # Value initialization
     start_time = time.time()
-
+    np.random.seed(seed=random_seed)
     image_matrix = np.full((sample_number, channels, y_res, x_res), v_min, dtype=np.uint8)
     label_matrix = np.zeros((sample_number, label_count), dtype=np.uint8)
-
-    # Make label matrix before entering into loop! It's much faster... probably.
 
     for i in range(label_count):
         vertical_label_matrix = np.random.choice([0, 1], sample_number, p=label_frequency_list[i])
@@ -153,25 +150,25 @@ def generate_multilabel_toy_dataset(sample_number=1000, x_res=256, y_res=256, ch
 def draw_shapes(image, label, size, frequency, v_max, x_res, y_res, all_channels_same):
     # Determines frequency of item in image; how many times to run the item loop.
     if type(frequency) is list:
-        item_count = random.randint(frequency[0], frequency[1])   # Determines number of items to place in
+        item_count = np.randint(frequency[0], frequency[1])         # Determines number of items to place in
     else:
         item_count = frequency
 
     for i in range(item_count):
         # Determining size of sample
         if type(size) is list:
-            item_size = random.randint(size[0], size[1])
+            item_size = np.randint(size[0], size[1])
         else:
             item_size = size
 
         # Generate a circle within the range to use as bounds for the shape.
-        ry = random.randint(0 + item_size, y_res - item_size - 1)
-        cx = random.randint(0 + item_size, x_res - item_size - 1)
+        ry = np.randint(0 + item_size, y_res - item_size - 1)
+        cx = np.randint(0 + item_size, x_res - item_size - 1)
 
         # have to add 2 to the label to generate the correct number of points; generates 1 extra.
         # Generate an initial point at an angle of 0; maybe consider randomizing this later?
         # angle_list = (np.linspace(0, 2 * np.pi, label + 2)+random.random()*np.pi) % (2*np.pi)
-        angle_list = ((np.linspace(0, 1, label + 2) + random.random()) % 1) * 2*np.pi
+        angle_list = ((np.linspace(0, 1, label + 2) + np.random.random_sample()) % 1) * 2*np.pi
         x_pos_list = (ry + np.cos(angle_list[0:-1]) * item_size).astype(int)
         y_pos_list = (cx + np.sin(angle_list[0:-1]) * item_size).astype(int)
 
@@ -212,7 +209,6 @@ def draw_shapes(image, label, size, frequency, v_max, x_res, y_res, all_channels
 
 
 def progressbar(percent):
-    a = 1
     # This is just a placeholder!
 
 
