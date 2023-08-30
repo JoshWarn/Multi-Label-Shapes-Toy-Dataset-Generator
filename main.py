@@ -10,9 +10,8 @@ import timeit
 
 def generate_multilabel_toy_dataset(sample_number=1000, x_res=256, y_res=256, channels=3, v_min=0, v_max=1,
                                     size=[10, 40], frequency=[2, 20], label_count=2, label_frequency=0.5,
-                                    replace_no_label_images=False,
-                                    path=None, export_type=None, verbose=True, all_channels_same_optim=True,
-                                    progress_bar=False, random_seed=0):
+                                    replace_no_label_images=False, path=None, export_type=None, verbose=True,
+                                    all_channels_same_optim=True, random_seed=0):
     """
     Creates a dataset with basic shape perimeters; 1, 2, 3, 4... = circle, line, triangle, square etc...
 
@@ -116,15 +115,18 @@ def generate_multilabel_toy_dataset(sample_number=1000, x_res=256, y_res=256, ch
         label_matrix[:, i] = vertical_label_matrix
 
     for i in range(sample_number):
-        if progress_bar and i % 100 == 0:
+        if verbose and i % 100 == 0:
             progressbar(i/sample_number)
         for j in range(label_count):
             if label_matrix[i][j] == 1:
                 image_matrix[i] = draw_shapes(image_matrix[i], j, size, frequency, v_max, x_res, y_res, all_channels_same_optim)
-    progressbar(1)
+    if verbose:
+        progressbar(1)
 
     image_matrix = np.transpose(image_matrix, (0, 2, 3, 1))     # Changing the order of dimensions
     if export_type == "image_folder":
+        if verbose:
+            print("Saving dataset to image folder...")
         saved_img_matrix = image_matrix*255
         for i in range(len(image_matrix)):
             pil_img = Image.fromarray(saved_img_matrix[i].astype('uint8'))   # convert image to PIL image and save
@@ -135,6 +137,8 @@ def generate_multilabel_toy_dataset(sample_number=1000, x_res=256, y_res=256, ch
                 txt_str = str(label_matrix[i]).replace("[", "").replace("]", "").replace(" ", ",")
                 f.write(f"{txt_str}\n")
     elif export_type == "pickle":
+        if verbose:
+            print("Saving dataset to pickle files...")
         # TODO save the dataset as two files; an image array and a label array.
         with open(f"{path}\\Images.pkl", "wb") as file:
             pickle.dump(image_matrix, file)
@@ -209,10 +213,23 @@ def draw_shapes(image, label, size, frequency, v_max, x_res, y_res, all_channels
 
 
 def progressbar(percent, bar_len=50):
+    """
+    Generates and prints a simple progress bar.
+    :param percent: float between - and 1; percent complete.
+    :param bar_len: total length of bar (int)
+    :return: None
+    """
+    # Input sanitization/verification
+    if not 0 <= percent <= 1 or type(percent) is not float:
+        print(f"Percentage value of Value:{percent} Type:{type(percent)} not supported!")
+
+    if bar_len <= 1 or type(bar_len) is not int:
+        print(f"Bar_len value of Value:{bar_len} Type:{type(bar_len)} not supported!")
+
+    # Calculations:
     bar = int(percent*bar_len)
-    # Typically end="\r", but issues w/ IDEs not supporting "\r" resulting in slowdowns.
-    print(f"Progress: |{'█'*bar+ '-'*(bar_len-bar)}| {100*percent:f}%", end="\n")
-    # This is just a placeholder!
+    # Typically end="\r", but issues w/ IDEs not supporting return carriage "\r" resulting in slowdowns (ex. IDLE).
+    print(f"Progress: |{'█'*bar+ '─'*(bar_len-bar)}| {100*percent:f}%", end="\n")
 
 
 # Example usage:
