@@ -12,6 +12,7 @@ With this generator:
 - Dataset difficulty can be easily adjusted using generation parameters.
 
 Base Recommended Parameters:
+
 generate_multilabel_toy_dataset(sample_number=10000,
                                 label_count=3,
                                 x_res=256, y_res=256, channels=3,
