@@ -238,13 +238,16 @@ def progressbar(percent, bar_len=50):
 
     # Calculations:
     bar = int(percent*bar_len)
-    # Typically end="\r", but issues w/ IDEs not supporting return carriage "\r" resulting in slowdowns (ex. IDLE).
-    print(f"Progress: |{'█'*bar+ '─'*(bar_len-bar)}| {100*percent:f}%", end="\n")
+    # Typically end="", but issues w/ IDEs not supporting return carriage "\r" resulting in slowdowns (ex. IDLE).
+    if percent == 1:
+        print(f"\rProgress: |{'█' * bar + '─' * (bar_len - bar)}| {100 * percent:f}%", end="\n")
+    else:
+        print(f"\rProgress: |{'█' * bar + '─' * (bar_len - bar)}| {100 * percent:f}%", end="")
 
 
 # Example usage:
-# images, labels = generate_multilabel_toy_dataset(10000, label_count=5, frequency=[2, 20], path="Dataset",
-#                                                  export_type="image_folder", random_channel_classes=False)
+images, labels = generate_multilabel_toy_dataset(10000, label_count=5, frequency=[2, 20], path="Dataset",
+                                                 export_type=None, random_channel_classes=False)
 
 # import timeit
 # print(timeit.repeat("generate_multilabel_toy_dataset(10000, label_count=5, frequency=[2, 20], path='Dataset', export_type=None)",
