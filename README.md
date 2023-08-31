@@ -1,4 +1,4 @@
-# Multi-Label Toy Dataset Generator
+# Multi-Label "Shapes" Toy Dataset Generator
 
 Multi-label neural networks can be challenging to make.
 With many multilabel datasets being text, difficult to find, or having subjective questionable labels, I created this generator to eliminate one point of error when making multi-label NNs; the dataset.
