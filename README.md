@@ -13,7 +13,7 @@ The recommended use case is to create an easy dataset that any neural network sh
 
 ### Base Recommended Parameters:
 
-generate_multilabel_toy_dataset(sample_number=10000,
+>generate_multilabel_toy_dataset(sample_number=10000,
                                 label_count=3,
                                 x_res=256, y_res=256, channels=3,
                                 v_min=0, v_max=1,
