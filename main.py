@@ -64,11 +64,24 @@ def generate_multilabel_toy_dataset(sample_number=1000, x_res=256, y_res=256, ch
     label_matrix = np.zeros((sample_number, label_count), dtype=np.uint8)
 
     # Detects if folder exists or has files; makes folder if it doesn't exist.
-    # TODO Fix issue with creation of sub-dataset folder when image_folder or dataset not to-be saved!
     if export_type is not None:
-        if not os.path.isdir(path):
+        if os.path.isdir(path):
+            if verbose:
+                print("Export Folder already exists!")
+        else:
+            if verbose:
+                print("Making Export Folder...")
             os.makedirs(path)
-            os.makedirs(f"{path}\\Dataset")
+        if export_type is "image_folder":
+            if os.path.isdir(f"{path}\\Dataset"):
+                if verbose:
+                    print("Dataset Folder already exists!")
+            else:
+                if verbose:
+                    print("Making Dataset Folder...")
+                os.makedirs(f"{path}\\Dataset")
+
+
 
     # Created label probabilities for each label
     if type(label_frequency) is int or float:
@@ -249,7 +262,7 @@ def input_validity(var_val, var_name, var_dtypes, var_min="", var_max="",
     # If series, make sure trend is correct.
     # Make sure each value is larger/smaller than the previous
     if var_val_type in ["list", "tuple"] and series_trend in ["increasing", "decreasing"]:
-        if series_trend is "increasing":
+        if series_trend == "increasing":
             for i in range(len(var_val)-1):
                 # If next variable value isn't larger:
                 if var_val[i] >= var_val[i+1]:
@@ -257,7 +270,7 @@ def input_validity(var_val, var_name, var_dtypes, var_min="", var_max="",
                         warnings.warn(series_trend_error_msg)
                     elif actions[4] == "raise":
                         raise Exception(series_trend_error_msg)
-        elif series_trend is "decreasing":
+        elif series_trend == "decreasing":
             for i in range(len(var_val)-1):
                 # If next variable value isn't smaller:
                 if var_val[i] <= var_val[i+1]:
@@ -276,14 +289,13 @@ def draw_shapes(image, label, size, frequency, v_max, x_res, y_res, random_chann
 
     # Selecting what channel(s) to put shapes on:
     if random_channel_classes:
-        # select random channels to place images on
-
-        # number of channels to use
+        # Using randint to make a boolean "channels-used" array which is then shuffled.
+        # Ensures that at least 1 channel has the shapes.
         num_used_channels = np.random.randint(1, len(image) + 1)
         channels_used = np.array([True] * num_used_channels + [False]*(len(image)-num_used_channels), dtype=bool)
-        np.random.shuffle(channels_used)    # Randomize what channels used
+        np.random.shuffle(channels_used)
     else:
-        # Select all channels to be used
+        # If not random, select all channels.
         channels_used = np.ones(len(image), dtype=bool)
 
     first_channel_used = np.argmax(channels_used == True)
@@ -375,7 +387,7 @@ def export_images(image_matrix, label_matrix, path, export_type):
 #                                                  export_type=None, random_channel_classes=False)
 
 # import timeit
-# print(timeit.repeat("generate_multilabel_toy_dataset(10000, label_count=5, frequency=[2, 20], path='Dataset', export_type=None)",
+# print(timeit.repeat("generate_multilabel_toy_dataset(10000, label_count=3, frequency=[2, 20], path='Dataset', export_type=None)",
 #                      "from __main__ import generate_multilabel_toy_dataset", repeat=6, number=1))
 """
 Time statistics:
@@ -383,10 +395,7 @@ Time statistics:
 10k-3l: 6.9095, 6.965, 7.092, 7.134, 6.986
 10k-5l: 14.293532099982258, 14.326442399993539, 14.194133099983446, 14.242385699995793, 14.304134599980898
 
-8/30/23 7:43 PM
-10k-3l: 6.941822100023273, 6.826388500048779, 6.851339500048198, 6.905877300014254, 7.020793200004846, 6.8281946000061
-10k-5l: 14.58191119995899, 15.44085159996757, 15.73625730001367, 14.85148279997520, 14.32096139999339, 14.11768680001841
-
 9/1/23 8:53 PM
+10k-3l: 7.980153200100176, 6.761500300024636, 6.769760199938901, 6.751440299907699, 6.677566699916497, 6.732773500028998
 10k-5l: 14.21016500005498, 14.10257089999504, 14.03012620005756, 14.49815839994698, 14.05022810003720, 14.01318210002500
 """
