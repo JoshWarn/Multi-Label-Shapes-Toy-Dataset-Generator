@@ -48,8 +48,6 @@ def generate_multilabel_toy_dataset(sample_number=1000, x_res=256, y_res=256, ch
     verbose         - if info about building the dataset should be printed; progress bar & time taken.
     random_seed     - sets random state; default 0.
     random_channel_classes - allows channels to show up on random channels. Default disabled.
-
-    TODO if files detected in the Dataset folder, create a new version?
     """
 
     # ~~ Input sanitization and verification ~~
