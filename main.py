@@ -106,8 +106,9 @@ def generate_multilabel_toy_dataset(sample_number=1000, x_res=256, y_res=256, ch
     return image_matrix, label_matrix
 
 
-def check_input_validity(sample_number, x_res, y_res, channels, v_min, v_max, size, frequency, label_count,
-                         label_frequency, path, export_folder, export_type, verbose, random_seed, random_channel_classes):
+def check_input_validity(sample_number, x_res, y_res, channels, v_min, v_max, size, frequency,
+                         label_count, label_frequency, path, export_folder, export_type,
+                         verbose, random_seed, random_channel_classes):
     """
     Checks the validity of all inputs; broken into a separate function for code-cleanliness
     """
@@ -132,7 +133,7 @@ def check_input_validity(sample_number, x_res, y_res, channels, v_min, v_max, si
                    var_min=1, var_max=float("inf"), series_len=2, series_trend=None,
                    actions=["raise", "raise", "raise", "raise", "raise"])
     input_validity(var_val=label_count, var_name="Label-Count", var_dtypes=[int], var_min=1, var_max=float("inf"),
-                   series_len=None, series_trend=None, actions=["raise", "raise", "raise", "raise", "raise"])
+                   series_len=1, series_trend=None, actions=["raise", "raise", "raise", "raise", "raise"])
     input_validity(var_val=label_frequency, var_name="Label-Frequency", var_dtypes=[float, list, tuple],
                    var_min=0, var_max=1, series_len=2, series_trend="increasing",
                    actions=["raise", "raise", "raise", "raise", "raise"])
@@ -165,11 +166,7 @@ def check_input_validity(sample_number, x_res, y_res, channels, v_min, v_max, si
                       f"v_min and v_max of {v_min} and {v_max} found.")
 
 
-
-
-
-
-def input_validity(var_val, var_name, var_dtypes, var_min="", var_max="",
+def input_validity(var_val, var_name, var_dtypes, var_min=None, var_max=None,
                    series_len=2, series_trend=None, actions=["raise", "raise", "raise", "raise", "raise"]):
     """
     Sends messages to console for variable validating.
@@ -211,13 +208,13 @@ def input_validity(var_val, var_name, var_dtypes, var_min="", var_max="",
     if var_val_type in [list, tuple]:
         for val in var_val:
             if type(val) in [float, int]:
-                if var_min != "":
+                if var_min is not None:
                     if val < var_min:
                         if actions[1] == "warn":
                             warnings.warn(min_val_error_msg)
                         elif actions[1] == "raise":
                             raise ValueError(min_val_error_msg)
-                if var_max != "":
+                if var_max is not None:
                     if val > var_max:
                         if actions[2] == "warn":
                             warnings.warn(max_val_error_msg)
@@ -225,13 +222,13 @@ def input_validity(var_val, var_name, var_dtypes, var_min="", var_max="",
                             raise ValueError(max_val_error_msg)
     else:
         if var_val_type in [float, int]:
-            if var_min != "":
+            if var_min is not None:
                 if var_val < var_min:
                     if actions[1] == "warn":
                         warnings.warn(min_val_error_msg)
                     elif actions[1] == "raise":
                         raise Exception(min_val_error_msg)
-            if var_max != "":
+            if var_max is not None:
                 if var_val > var_max:
                     if actions[2] == "warn":
                         warnings.warn(max_val_error_msg)
@@ -298,7 +295,7 @@ def draw_shapes(image, label, size, frequency, v_max, x_res, y_res, random_chann
         cx = np.random.randint(0 + item_size, x_res - item_size - 1)
 
         # Have to add 2 to the label to generate the correct number of points;
-        # generates 1 extra to correctly space points in the linspace function.
+        # generates 1 extra to correctly space points in the linear space function.
         angle_list = ((np.linspace(0, 1, label + 2) + np.random.random_sample()) % 1) * 2*np.pi
         x_pos_list = (ry + np.cos(angle_list[0:-1]) * item_size).astype(int)
         y_pos_list = (cx + np.sin(angle_list[0:-1]) * item_size).astype(int)
