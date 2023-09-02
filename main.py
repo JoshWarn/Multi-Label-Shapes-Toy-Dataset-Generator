@@ -24,7 +24,7 @@ import skimage
 
 
 def generate_multilabel_toy_dataset(sample_number=1000, x_res=256, y_res=256, channels=3, v_min=0, v_max=1,
-                                    size=[10, 40], frequency=[2, 20], label_count=2, label_frequency=0.5,
+                                    size=[10, 40], frequency=[2, 20], label_count=3, label_frequency=0.5,
                                     path=None, export_type=None, verbose=True, random_seed=0,
                                     random_channel_classes=False):
     """
@@ -48,86 +48,42 @@ def generate_multilabel_toy_dataset(sample_number=1000, x_res=256, y_res=256, ch
     verbose         - if info about building the dataset should be printed; progress bar & time taken.
     random_seed     - sets random state; default 0.
     random_channel_classes - allows channels to show up on random channels. Default disabled.
-    TODO add more warnings and tracebacks.
-    TODO rewrite comments, descriptions.
+
     TODO if files detected in folder, ask if they should be overwritten.
     TODO Fix issue with creation of sub-dataset folder when image_folder or dataset not to-be saved!
     """
 
-    # Warnings and input checking
-    valid_exports = ["image_folder", "pickle", None]
-    if export_type not in valid_exports:
-        warnings.warn(f"Export type {export_type} not supported! Valid list: {valid_exports}")
-        raise BaseException("Unexpected export type!")
+    # ~~ Input sanitization and verification ~~
+    check_input_validity(sample_number, x_res, y_res, channels, v_min, v_max, size, frequency, label_count,
+                         label_frequency, path, export_type, verbose, random_seed, random_channel_classes)
 
-    if (v_min != 0 or v_max != 1) and export_type == "image_folder":
-        warnings.warn(f"v_min and v_max of 0-1 should be used when saving images!"
-                      f"v_min and v_max of {v_min} and {v_max} found.")
-
-    if export_type is not None and path is None:
-        warnings.warn(f"Exporting enabled ({export_type}), but no path provided! Path: {path}")
-
-    # Warnings regarding frequency of items in image
-    if type(frequency) is int:
-        if frequency <= 0:
-            warnings.warn(f"Frequency of {frequency} equal or below zero! Won't work.")
-    elif type(frequency) is list:
-        if len(frequency) != 2:
-            warnings.warn(f"Too many frequency parameters! Expects a min and max bound but got {frequency}")
-        if frequency[0] < 0:
-            warnings.warn(f"Lower frequency bound of {frequency[0]} is less than zero! May break!")
-        if frequency[0] == 0:
-            warnings.warn(f"Lower frequency bound of {frequency[0]} is zero! May break (or result in mislables)!")
-        if frequency[1] < frequency[0]:
-            warnings.warn(f"Lower frequency bound {frequency[0]} greater than upper bound {frequency[1]}")
-    else:
-        warnings.warn(f"Frequency of {frequency} not supported!")
-
-    # Warnings and processing of label frequency
-    if type(label_frequency) is int or float:
-        label_frequency_list = [[1 - label_frequency, label_frequency] for label in range(label_count)]
-        if label_frequency >= 1 or label_frequency <= 0:
-            warnings.warn(f"Label Frequency of {label_frequency} not supported!")
-    else:
-        # Make a list between min and max frequency; currently just linear
-        label_frequency_temp = np.linspace(label_frequency[0], label_frequency[1], label_count)
-        label_frequency_list = [[1-label_freq, label_freq] for label_freq in label_frequency_temp]
-        if len(label_frequency) != 2:
-            warnings.warn(f"Length of Label Frequency {len(label_frequency)} not supported!")
-
-    # Warnings regarding size of items in image:
-    if type(size) == int or type(size) == float:
-        if size < 0 or size > x_res or size > y_res:
-            warnings.warn(f"Size of {frequency} out of supported range!")
-    elif type(size) is list:
-        if len(size) != 2:
-            warnings.warn(f"Too many size parameters! Expects a min and max bound but got {size}")
-        if size[0] < 0:
-            warnings.warn(f"Lower size bound of {size[0]} is less than zero! May break!")
-        if size[0] == 0:
-            warnings.warn(f"Lower size bound of {size[0]} is zero! May break (or result in mislables)!")
-        if size[1] < size[0]:
-            warnings.warn(f"Lower size bound {size[0]} greater than upper bound {size[1]}")
-        if size[1] > x_res or size[1] > y_res:
-            warnings.warn(f"Size of {size[1]} out of supported range!")
-
-        # Detects if folder exists or has files; makes folder if it doesn't exist.
-        if valid_exports is not None:
-            if not os.path.isdir(path):
-                os.makedirs(path)
-                os.makedirs(f"{path}\\Dataset")
-
-    # Value initialization
+    # ~~ Value initialization and pre-processing ~~
     start_time = time.time()
     np.random.seed(seed=random_seed)
     image_matrix = np.full((sample_number, channels, y_res, x_res), v_min, dtype=np.uint8)
     label_matrix = np.zeros((sample_number, label_count), dtype=np.uint8)
+
+    # Detects if folder exists or has files; makes folder if it doesn't exist.
+    # TODO Fix issue with creation of sub-dataset folder when image_folder or dataset not to-be saved!
+    if export_type is not None:
+        if not os.path.isdir(path):
+            os.makedirs(path)
+            os.makedirs(f"{path}\\Dataset")
+
+    # Created label probabilities for each label
+    if type(label_frequency) is int or float:
+        label_frequency_list = [[1 - label_frequency, label_frequency] for label in range(label_count)]
+    else:
+        # Make a list between min and max frequency; currently just linear
+        label_frequency_temp = np.linspace(label_frequency[0], label_frequency[1], label_count)
+        label_frequency_list = [[1-label_freq, label_freq] for label_freq in label_frequency_temp]
 
     # Initializes values into a sample_num x label_count matrix with a given frequency
     for i in range(label_count):
         vertical_label_matrix = np.random.choice([0, 1], sample_number, p=label_frequency_list[i])
         label_matrix[:, i] = vertical_label_matrix
 
+    # ~~ Main Generation Loop ~~
     for i in range(sample_number):
         if verbose and i % 100 == 0:
             progressbar(i/sample_number)
@@ -137,32 +93,178 @@ def generate_multilabel_toy_dataset(sample_number=1000, x_res=256, y_res=256, ch
     if verbose:
         progressbar(1.)
 
-    image_matrix = np.transpose(image_matrix, (0, 2, 3, 1))     # Changing the order of dimensions
-    if export_type == "image_folder":
-        if verbose:
-            print("Saving dataset to image folder...")
-        saved_img_matrix = image_matrix*255
-        for i in range(len(image_matrix)):
-            pil_img = Image.fromarray(saved_img_matrix[i].astype('uint8'))   # convert image to PIL image and save
-            pil_img.save(f"{path}\\Dataset\\{i:05}.png", "PNG")
+    # ~~ Postprocessing ~~
+    # Changing the order of dimensions in image matrix to make saving and opening easy.
+    image_matrix = np.transpose(image_matrix, (0, 2, 3, 1))
 
-        with open(f"{path}\\labels.csv", "w") as f:  # Save label data
-            for i in range(len(label_matrix)):
-                txt_str = str(label_matrix[i]).replace("[", "").replace("]", "").replace(" ", ",")
-                f.write(f"{txt_str}\n")
-    elif export_type == "pickle":
+    # ~~ Saving ~~
+    if export_type is not None:
         if verbose:
-            print("Saving dataset to pickle files...")
-        # TODO save the dataset as two files; an image array and a label array.
-        with open(f"{path}\\Images.pkl", "wb") as file:
-            pickle.dump(image_matrix, file)
-        with open(f"{path}\\Labels.pkl", "wb") as file:
-            pickle.dump(label_matrix, file)
+            print(f"Saving dataset to {export_type}...")
+        export_images(image_matrix, label_matrix, path, export_type)
 
     if verbose:
-        print(f"Dataset of {sample_number} {x_res}x{y_res}x{channels} samples built in {time.time()-start_time:0f} seconds.")
-
+        print(f"Dataset of {sample_number} {x_res}x{y_res}x{channels} samples built in {time.time()-start_time:0f} s.")
     return image_matrix, label_matrix
+
+
+def check_input_validity(sample_number, x_res, y_res, channels, v_min, v_max, size, frequency, label_count,
+                         label_frequency, path, export_type, verbose, random_seed, random_channel_classes):
+    """
+    Checks the validity of all inputs; broken into a separate function for code-cleanliness
+    """
+    input_validity(var_val=sample_number, var_name="Sample-Count", var_dtypes=[int], var_min=1, var_max=1E9,
+                   series_len=None, series_trend=None, actions=["raise", "raise", "warn", "raise", "raise"])
+    input_validity(var_val=x_res, var_name="X-Resolution", var_dtypes=[int], var_min=8, var_max=2 ** 10,
+                   series_len=None, series_trend=None, actions=["raise", "raise", "warn", "raise", "raise"])
+    input_validity(var_val=y_res, var_name="Y-Resolution", var_dtypes=[int], var_min=8, var_max=2 ** 10,
+                   series_len=None, series_trend=None, actions=["raise", "raise", "warn", "raise", "raise"])
+    input_validity(var_val=channels, var_name="Channel-Count", var_dtypes=[int], var_min=1, var_max=2 ** 8,
+                   series_len=None, series_trend=None, actions=["raise", "raise", "warn", "raise", "raise"])
+    input_validity(var_val=v_min, var_name="Min-Img-Value", var_dtypes=[int, float], var_min=-float("inf"),
+                   var_max=float("inf"), series_len=None, series_trend=None,
+                   actions=["raise", "raise", "raise", "raise", "raise"])
+    input_validity(var_val=v_max, var_name="Max-Img-Value", var_dtypes=[int, float], var_min=-float("inf"),
+                   var_max=float("inf"), series_len=None, series_trend=None,
+                   actions=["raise", "raise", "raise", "raise", "raise"])
+    input_validity(var_val=size, var_name="Item-Size", var_dtypes=[int, float, list, tuple],
+                   var_min=4, var_max=min(x_res, y_res), series_len=2, series_trend="increasing",
+                   actions=["raise", "raise", "raise", "raise", "raise"])
+    input_validity(var_val=frequency, var_name="Item-Frequency", var_dtypes=[int, list, tuple],
+                   var_min=1, var_max=float("inf"), series_len=None, series_trend=None,
+                   actions=["raise", "raise", "raise", "raise", "raise"])
+    input_validity(var_val=label_count, var_name="Label-Count", var_dtypes=[int], var_min=1, var_max=float("inf"),
+                   series_len=None, series_trend=None, actions=["raise", "raise", "raise", "raise", "raise"])
+    input_validity(var_val=label_frequency, var_name="Label-Frequency", var_dtypes=[float, list, tuple],
+                   var_min=0, var_max=1, series_len=None, series_trend="increasing",
+                   actions=["raise", "raise", "raise", "raise", "raise"])
+    input_validity(var_val=path, var_name="Path", var_dtypes=[str, type(None)], var_min="", var_max="",
+                   series_len=None, series_trend="", actions=["raise", "raise", "raise", "raise", "raise"])
+    input_validity(var_val=export_type, var_name="Export-Type", var_dtypes=[str, type(None)], var_min="", var_max="",
+                   series_len=None, series_trend="", actions=["raise", "raise", "raise", "raise", "raise"])
+    input_validity(var_val=verbose, var_name="Verbosity", var_dtypes=[bool], var_min="", var_max="",
+                   series_len=None, series_trend="", actions=["warning", "raise", "raise", "raise", "raise"])
+    input_validity(var_val=random_seed, var_name="Random-Seed", var_dtypes=[int],
+                   var_min=-float("inf"), var_max=float("inf"), series_len=None, series_trend="",
+                   actions=["raise", "raise", "raise", "raise", "raise"])
+    input_validity(var_val=random_channel_classes, var_name="Random-Channel-Classes", var_dtypes=[bool],
+                   var_min="", var_max="", series_len=None, series_trend="",
+                   actions=["raise", "raise", "raise", "raise", "raise"])
+
+    # Additional cleaning/verification for non-standard variables
+
+    # Make sure valid_export is in list
+    valid_exports = ["image_folder", "pickle", None]
+    if export_type not in valid_exports:
+        warnings.warn(f"Export type {export_type} not supported! Valid list: {valid_exports}")
+        raise BaseException("Unexpected export type!")
+
+    # Raising a warning if value bounds aren't [0, 1] when exporting to image_folder:
+    if (v_min != 0 or v_max != 1) and export_type == "image_folder":
+        warnings.warn(f"v_min and v_max of 0-1 should be used when saving images!"
+                      f"v_min and v_max of {v_min} and {v_max} found.")
+
+    # If export type is provided but no path
+    if export_type is not None and path is None:
+        raise Exception(f"Exporting enabled ({export_type}), but no path provided! Path: {path}")
+
+
+def input_validity(var_val, var_name, var_dtypes, var_min="", var_max="",
+                   series_len=2, series_trend=None, actions="warn"):
+    """
+    Sends messages to console for variable validating.
+    Exceptions sourced from: https://docs.python.org/3/library/exceptions.html#exception-hierarchy
+
+    :param var_val:             Value entered for variable
+    :param var_name:            Name to print when referring to variable
+    :param var_dtypes:  Accepted dtypes of variable
+    :param var_min:             Minimum accepted value of variable
+    :param var_max:             Maximum accepted value of variable
+    :param series_len:          Expected variable length (only used if var_accepted_types has "list").
+    :param series_trend:        Trend of values in list; "None" (bypassing), "increasing", "decreasing".
+                                Used for optional [Min, Max] entries.
+    :param actions:             What to do if triggered; "warn" or "raise" accepted.
+                                Order is [var_val_type, min_val, max_val, series_len, series_trend]
+    :return:                    None.
+    """
+
+    # Gathering information about variable
+    var_val_type = type(var_val)
+
+    # Error messages:
+    dtype_error_msg = f"Expected {var_name} dtype in {var_dtypes}, but {var_val_type} was found."
+    min_val_error_msg = f"Value of {var_val} in {var_name} is less than {var_min}."
+    max_val_error_msg = f"Value of {var_val} in {var_name} is more than {var_min}."
+    series_len_error_msg = f"Variable length of {var_val} in {var_name} isn't equal to {series_len}."
+    series_trend_error_msg = f"Series trend of {var_name} expected to be {series_trend}, but was {var_val}."
+
+    # Checking variable type
+    if var_val_type not in var_dtypes:
+        if actions[0] == "warn":
+            warnings.warn(dtype_error_msg)
+        elif actions[0] == "raise":
+            raise TypeError(dtype_error_msg)
+
+    # Checking variable min/max
+    # If variable has multiple values, check each. Otherwise, check single value
+    # This may not catch if numpy inputs are passed; perhaps revise later.
+    if var_val_type in ["list", "tuple"]:
+        for val in var_val:
+            if type(val) in ["float", "int"]:
+                if var_min != "":
+                    if val < var_min:
+                        if actions[1] == "warn":
+                            warnings.warn(min_val_error_msg)
+                        elif actions[1] == "raise":
+                            raise ValueError(min_val_error_msg)
+                if var_max != "":
+                    if val > var_max:
+                        if actions[2] == "warn":
+                            warnings.warn(max_val_error_msg)
+                        elif actions[2] == "raise":
+                            raise ValueError(max_val_error_msg)
+    else:
+        if type(var_val) in ["float", "int"]:
+            if var_min != "":
+                if var_val < var_min:
+                    if actions[1] == "warn":
+                        warnings.warn(min_val_error_msg)
+                    elif actions[1] == "raise":
+                        raise Exception(min_val_error_msg)
+            if var_max != "":
+                if var_val > var_max:
+                    if actions[2] == "warn":
+                        warnings.warn(max_val_error_msg)
+                    elif actions[2] == "raise":
+                        raise Exception(max_val_error_msg)
+
+    # If series, ensuring length is valid
+    if var_val_type in ["list", "tuple"] and series_len != "":  # Don't know if this second part is required.
+        if len(var_val_type) != series_len:
+            if actions[3] == "warn":
+                warnings.warn(series_len_error_msg)
+            elif actions[3] == "raise":
+                raise TypeError(series_len_error_msg)
+
+    # If series, make sure trend is correct.
+    # Make sure each value is larger/smaller than the previous
+    if var_val_type in ["list", "tuple"] and series_trend in ["increasing", "decreasing"]:
+        if series_trend is "increasing":
+            for i in range(len(var_val)-1):
+                # If next variable value isn't larger:
+                if var_val[i] >= var_val[i+1]:
+                    if actions[4] == "warn":
+                        warnings.warn(series_trend_error_msg)
+                    elif actions[4] == "raise":
+                        raise Exception(series_trend_error_msg)
+        elif series_trend is "decreasing":
+            for i in range(len(var_val)-1):
+                # If next variable value isn't smaller:
+                if var_val[i] <= var_val[i+1]:
+                    if actions[4] == "warn":
+                        warnings.warn(series_trend_error_msg)
+                    elif actions[4] == "raise":
+                        raise Exception(series_trend_error_msg)
 
 
 def draw_shapes(image, label, size, frequency, v_max, x_res, y_res, random_channel_classes):
@@ -245,13 +347,36 @@ def progressbar(percent, bar_len=50):
         print(f"\rProgress: |{'█' * bar + '─' * (bar_len - bar)}| {100 * percent:f}%", end="")
 
 
+def export_images(image_matrix, label_matrix, path, export_type):
+    if export_type == "image_folder":
+        # Multiplying by 255 to get [0, 255] values; may be redundant if PIL works with 0-1 floats. TODO test later.
+        saved_img_matrix = image_matrix*255
+        for i in range(len(image_matrix)):
+            # convert image to PIL image and saveing the image
+            pil_img = Image.fromarray(saved_img_matrix[i].astype('uint8'))
+            # save image
+            pil_img.save(f"{path}\\Dataset\\{i:05}.png", "PNG")
+
+        # Save label data
+        with open(f"{path}\\labels.csv", "w") as f:
+            for i in range(len(label_matrix)):
+                # Might be a better way to do this than to use all the replace commands...
+                txt_str = str(label_matrix[i]).replace("[", "").replace("]", "").replace(" ", ",")
+                f.write(f"{txt_str}\n")
+    elif export_type == "pickle":
+        with open(f"{path}\\Images.pkl", "wb") as file:
+            pickle.dump(image_matrix, file)
+        with open(f"{path}\\Labels.pkl", "wb") as file:
+            pickle.dump(label_matrix, file)
+
+
 # Example usage:
-images, labels = generate_multilabel_toy_dataset(10000, label_count=5, frequency=[2, 20], path="Dataset",
-                                                 export_type=None, random_channel_classes=False)
+# images, labels = generate_multilabel_toy_dataset(10000, label_count=5, frequency=[2, 20], path="Dataset",
+#                                                  export_type=None, random_channel_classes=False)
 
 # import timeit
 # print(timeit.repeat("generate_multilabel_toy_dataset(10000, label_count=5, frequency=[2, 20], path='Dataset', export_type=None)",
-#                     "from __main__ import generate_multilabel_toy_dataset", repeat=6, number=1))
+#                      "from __main__ import generate_multilabel_toy_dataset", repeat=6, number=1))
 """
 Time statistics:
 8/29/23 6:15 PM
@@ -261,4 +386,7 @@ Time statistics:
 8/30/23 7:43 PM
 10k-3l: 6.941822100023273, 6.826388500048779, 6.851339500048198, 6.905877300014254, 7.020793200004846, 6.8281946000061
 10k-5l: 14.58191119995899, 15.44085159996757, 15.73625730001367, 14.85148279997520, 14.32096139999339, 14.11768680001841
+
+9/1/23 8:53 PM
+10k-5l: 14.21016500005498, 14.10257089999504, 14.03012620005756, 14.49815839994698, 14.05022810003720, 14.01318210002500
 """
