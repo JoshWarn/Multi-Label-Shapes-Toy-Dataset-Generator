@@ -49,8 +49,7 @@ def generate_multilabel_toy_dataset(sample_number=1000, x_res=256, y_res=256, ch
     random_seed     - sets random state; default 0.
     random_channel_classes - allows channels to show up on random channels. Default disabled.
 
-    TODO if files detected in folder, ask if they should be overwritten.
-    TODO Fix issue with creation of sub-dataset folder when image_folder or dataset not to-be saved!
+    TODO if files detected in the Dataset folder, create a new version?
     """
 
     # ~~ Input sanitization and verification ~~
@@ -72,7 +71,7 @@ def generate_multilabel_toy_dataset(sample_number=1000, x_res=256, y_res=256, ch
             if verbose:
                 print("Making Export Folder...")
             os.makedirs(path)
-        if export_type is "image_folder":
+        if export_type == "image_folder":
             if os.path.isdir(f"{path}\\Dataset"):
                 if verbose:
                     print("Dataset Folder already exists!")
@@ -362,7 +361,7 @@ def export_images(image_matrix, label_matrix, path, export_type):
         # Multiplying by 255 to get [0, 255] values; may be redundant if PIL works with 0-1 floats. TODO test later.
         saved_img_matrix = image_matrix*255
         # Gets the digit count of the dataset to use in file-naming.
-        img_number_length = len(str(len(image_matrix)))
+        img_number_length = f"{len(str(len(image_matrix))):02}"
         for i in range(len(image_matrix)):
             # convert image to PIL image and saveing the image
             pil_img = Image.fromarray(saved_img_matrix[i].astype('uint8'))
@@ -383,8 +382,8 @@ def export_images(image_matrix, label_matrix, path, export_type):
 
 
 # Example usage:
-# images, labels = generate_multilabel_toy_dataset(10000, label_count=5, frequency=[2, 20], path="Dataset",
-#                                                  export_type=None, random_channel_classes=False)
+images, labels = generate_multilabel_toy_dataset(10000, label_count=3, frequency=[2, 20], path="Dataset",
+                                                  export_type="image_folder", random_channel_classes=False)
 
 # import timeit
 # print(timeit.repeat("generate_multilabel_toy_dataset(10000, label_count=3, frequency=[2, 20], path='Dataset', export_type=None)",
