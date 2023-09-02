@@ -25,7 +25,7 @@ import skimage
 
 def generate_multilabel_toy_dataset(sample_number=1000, x_res=256, y_res=256, channels=3, v_min=0, v_max=1,
                                     size=[10, 40], frequency=[2, 20], label_count=3, label_frequency=0.5,
-                                    path="", export_type=None, verbose=True, random_seed=0,
+                                    path="", export_folder="ShapesDataset", export_type=None, verbose=True, random_seed=0,
                                     random_channel_classes=False):
     """
     Creates a dataset with basic shape perimeters; 1, 2, 3, 4... = circle, line, triangle, square etc...
@@ -54,7 +54,7 @@ def generate_multilabel_toy_dataset(sample_number=1000, x_res=256, y_res=256, ch
 
     # ~~ Input sanitization and verification ~~
     check_input_validity(sample_number, x_res, y_res, channels, v_min, v_max, size, frequency, label_count,
-                         label_frequency, path, export_type, verbose, random_seed, random_channel_classes)
+                         label_frequency, path, export_folder, export_type, verbose, random_seed, random_channel_classes)
 
     # ~~ Value initialization and pre-processing ~~
     start_time = time.time()
@@ -66,7 +66,7 @@ def generate_multilabel_toy_dataset(sample_number=1000, x_res=256, y_res=256, ch
     if path == "":
         path = os.path.abspath(os.getcwd())
     # Detects if folder exists or has files; makes folder if it doesn't exist.
-    manage_export_path(export_type, path, verbose)
+    manage_export_path(export_type, path, export_folder, verbose)
 
     # Created label probabilities for each label
     if type(label_frequency) is int or float:
@@ -82,6 +82,8 @@ def generate_multilabel_toy_dataset(sample_number=1000, x_res=256, y_res=256, ch
         label_matrix[:, i] = vertical_label_matrix
 
     # ~~ Main Generation Loop ~~
+    if verbose:
+        print("Generating samples...")
     for i in range(sample_number):
         if verbose and i % 100 == 0:
             progressbar(i/sample_number)
@@ -99,7 +101,7 @@ def generate_multilabel_toy_dataset(sample_number=1000, x_res=256, y_res=256, ch
     if export_type is not None:
         if verbose:
             print(f"Saving dataset to {export_type}...")
-        export_images(image_matrix, label_matrix, path, export_type)
+        export_images(image_matrix, label_matrix, path, export_folder, export_type)
 
     if verbose:
         print(f"Dataset of {sample_number} {x_res}x{y_res}x{channels} samples built in {time.time()-start_time:0f} s.")
@@ -107,7 +109,7 @@ def generate_multilabel_toy_dataset(sample_number=1000, x_res=256, y_res=256, ch
 
 
 def check_input_validity(sample_number, x_res, y_res, channels, v_min, v_max, size, frequency, label_count,
-                         label_frequency, path, export_type, verbose, random_seed, random_channel_classes):
+                         label_frequency, path, export_folder, export_type, verbose, random_seed, random_channel_classes):
     """
     Checks the validity of all inputs; broken into a separate function for code-cleanliness
     """
@@ -137,6 +139,8 @@ def check_input_validity(sample_number, x_res, y_res, channels, v_min, v_max, si
                    var_min=0, var_max=1, series_len=2, series_trend="increasing",
                    actions=["raise", "raise", "raise", "raise", "raise"])
     input_validity(var_val=path, var_name="Path", var_dtypes=[str], var_min="", var_max="",
+                   series_len=1, series_trend="", actions=["raise", "raise", "raise", "raise", "raise"])
+    input_validity(var_val=export_folder, var_name="Export-Folder", var_dtypes=[str], var_min="", var_max="",
                    series_len=1, series_trend="", actions=["raise", "raise", "raise", "raise", "raise"])
     input_validity(var_val=export_type, var_name="Export-Type", var_dtypes=[str, type(None)], var_min="", var_max="",
                    series_len=1, series_trend="", actions=["raise", "raise", "raise", "raise", "raise"])
@@ -344,7 +348,7 @@ def progressbar(percent, bar_len=50):
         print(f"\rProgress: |{'█' * bar + '─' * (bar_len - bar)}| {100 * percent:f}%", end="")
 
 
-def export_images(image_matrix, label_matrix, path, export_type):
+def export_images(image_matrix, label_matrix, path, export_folder, export_type):
     if export_type == "image_folder":
         # Multiplying by 255 to get [0, 255] values for PIL
         saved_img_matrix = image_matrix*255
@@ -354,22 +358,22 @@ def export_images(image_matrix, label_matrix, path, export_type):
             # convert image to PIL image and saving the image
             pil_img = Image.fromarray(saved_img_matrix[i].astype('uint8'))
             # save image
-            pil_img.save(f"{path}\\Dataset\\{i:{img_number_length}}.png", "PNG")
+            pil_img.save(f"{path}\\{export_folder}\\{i:{img_number_length}}.png", "PNG")
 
         # Save label data
-        with open(f"{path}\\Dataset\\labels.csv", "w") as f:
+        with open(f"{path}\\{export_folder}\\labels.csv", "w") as f:
             for i in range(len(label_matrix)):
                 # Might be a better way to do this than to use all the replace commands...
                 txt_str = str(label_matrix[i]).replace("[", "").replace("]", "").replace(" ", ",")
                 f.write(f"{txt_str}\n")
     elif export_type == "pickle":
-        with open(f"{path}\\Dataset\\Images.pkl", "wb") as file:
+        with open(f"{path}\\{export_folder}\\Images.pkl", "wb") as file:
             pickle.dump(image_matrix, file)
-        with open(f"{path}\\Dataset\\Labels.pkl", "wb") as file:
+        with open(f"{path}\\{export_folder}\\Labels.pkl", "wb") as file:
             pickle.dump(label_matrix, file)
 
 
-def manage_export_path(export_type, path, verbose):
+def manage_export_path(export_type, path, export_folder, verbose):
     if export_type is not None:
         # base directory doesn't exist, send a warning, but create it anyway.
         if os.path.isdir(path) is False:
@@ -379,19 +383,18 @@ def manage_export_path(export_type, path, verbose):
             os.makedirs(path)
 
         # If Datafolder exists, check and delete files within folder; otherwise, create the dataset folder.
-        if os.path.isdir(f"{path}\\Dataset"):
+        if os.path.isdir(f"{path}\\{export_folder}"):
             if verbose:
                 print("Main Export Folder already exists!")
 
             # Gets all files and folders within the directory
-            files = [[dirpath, dirname, filename] for (dirpath, dirname, filename) in os.walk(f"{path}\\Dataset")]
-
+            files = [[dirpath, dirname, filename] for (dirpath, dirname, filename) in os.walk(f"{path}\\{export_folder}")]
             files_found = False
             for location in files:
                 if len(location[2]) != 0:
                     files_found = True
             if files_found and verbose:
-                warnings.warn(f"Files already found in or under folder: {path}\\Dataset. "
+                warnings.warn(f"Files already found in or under folder: {path}\\{export_folder}. "
                               f"Writing over!")
 
             # Deleting all files in the dataset folder
@@ -407,15 +410,15 @@ def manage_export_path(export_type, path, verbose):
                 for location in files:
                     if len(location[1]) > 0:
                         for folder in location[1]:
-                            warnings.warn(f"Sub-folder(s) '{folder}' within dataset path: {path}\\Dataset.")
+                            warnings.warn(f"Sub-folder(s) '{folder}' within dataset path: {path}\\{export_folder}.")
         else:
             if verbose:
                 print("Creating Dataset folder...")
-            os.makedirs(f"{path}\\Dataset")
+            os.makedirs(f"{path}\\{export_folder}")
 
 
 # Example usage:
-images, labels = generate_multilabel_toy_dataset(10000, label_count=3, frequency=[2, 20], path="",
+images, labels = generate_multilabel_toy_dataset(10000, label_count=3, frequency=[2, 20], path="", export_folder="ShapesDataset",
                                                  export_type="image_folder", random_channel_classes=False)
 
 # import timeit
