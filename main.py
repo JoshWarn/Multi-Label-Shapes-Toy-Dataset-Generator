@@ -374,10 +374,13 @@ def export_images(image_matrix, label_matrix, path, export_folder, export_type, 
     elif export_type == "pickle":
         if verbose:
             progressbar(0)
+
+        # Save pickle files directly to folder.
         with open(f"{path}\\{export_folder}\\Images.pkl", "wb") as file:
             pickle.dump(image_matrix, file)
         with open(f"{path}\\{export_folder}\\Labels.pkl", "wb") as file:
             pickle.dump(label_matrix, file)
+
         if verbose:
             progressbar(1)
 
