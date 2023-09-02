@@ -81,8 +81,6 @@ def generate_multilabel_toy_dataset(sample_number=1000, x_res=256, y_res=256, ch
                     print("Making Dataset Folder...")
                 os.makedirs(f"{path}\\Dataset")
 
-
-
     # Created label probabilities for each label
     if type(label_frequency) is int or float:
         label_frequency_list = [[1 - label_frequency, label_frequency] for label in range(label_count)]
@@ -363,11 +361,13 @@ def export_images(image_matrix, label_matrix, path, export_type):
     if export_type == "image_folder":
         # Multiplying by 255 to get [0, 255] values; may be redundant if PIL works with 0-1 floats. TODO test later.
         saved_img_matrix = image_matrix*255
+        # Gets the digit count of the dataset to use in file-naming.
+        img_number_length = len(str(len(image_matrix)))
         for i in range(len(image_matrix)):
             # convert image to PIL image and saveing the image
             pil_img = Image.fromarray(saved_img_matrix[i].astype('uint8'))
             # save image
-            pil_img.save(f"{path}\\Dataset\\{i:05}.png", "PNG")
+            pil_img.save(f"{path}\\Dataset\\{i:{img_number_length}}.png", "PNG")
 
         # Save label data
         with open(f"{path}\\labels.csv", "w") as f:
