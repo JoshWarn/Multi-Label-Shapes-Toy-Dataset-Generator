@@ -25,7 +25,7 @@ import skimage
 
 def generate_multilabel_toy_dataset(sample_number=1000, x_res=256, y_res=256, channels=3, v_min=0, v_max=1,
                                     size=[10, 40], frequency=[2, 20], label_count=3, label_frequency=0.5,
-                                    path=None, export_type=None, verbose=True, random_seed=0,
+                                    path="", export_type=None, verbose=True, random_seed=0,
                                     random_channel_classes=False):
     """
     Creates a dataset with basic shape perimeters; 1, 2, 3, 4... = circle, line, triangle, square etc...
@@ -62,23 +62,11 @@ def generate_multilabel_toy_dataset(sample_number=1000, x_res=256, y_res=256, ch
     image_matrix = np.full((sample_number, channels, y_res, x_res), v_min, dtype=np.uint8)
     label_matrix = np.zeros((sample_number, label_count), dtype=np.uint8)
 
+    # If no path is provided, get the local project path.
+    if path == "":
+        path = os.path.abspath(os.getcwd())
     # Detects if folder exists or has files; makes folder if it doesn't exist.
-    if export_type is not None:
-        if os.path.isdir(path):
-            if verbose:
-                print("Export Folder already exists!")
-        else:
-            if verbose:
-                print("Making Export Folder...")
-            os.makedirs(path)
-        if export_type == "image_folder":
-            if os.path.isdir(f"{path}\\Dataset"):
-                if verbose:
-                    print("Dataset Folder already exists!")
-            else:
-                if verbose:
-                    print("Making Dataset Folder...")
-                os.makedirs(f"{path}\\Dataset")
+    manage_export_path(export_type, path, verbose)
 
     # Created label probabilities for each label
     if type(label_frequency) is int or float:
@@ -124,18 +112,18 @@ def check_input_validity(sample_number, x_res, y_res, channels, v_min, v_max, si
     Checks the validity of all inputs; broken into a separate function for code-cleanliness
     """
     input_validity(var_val=sample_number, var_name="Sample-Count", var_dtypes=[int], var_min=1, var_max=1E9,
-                   series_len=None, series_trend=None, actions=["raise", "raise", "warn", "raise", "raise"])
+                   series_len=1, series_trend=None, actions=["raise", "raise", "warn", "raise", "raise"])
     input_validity(var_val=x_res, var_name="X-Resolution", var_dtypes=[int], var_min=8, var_max=2 ** 10,
-                   series_len=None, series_trend=None, actions=["raise", "raise", "warn", "raise", "raise"])
+                   series_len=1, series_trend=None, actions=["raise", "raise", "warn", "raise", "raise"])
     input_validity(var_val=y_res, var_name="Y-Resolution", var_dtypes=[int], var_min=8, var_max=2 ** 10,
-                   series_len=None, series_trend=None, actions=["raise", "raise", "warn", "raise", "raise"])
+                   series_len=1, series_trend=None, actions=["raise", "raise", "warn", "raise", "raise"])
     input_validity(var_val=channels, var_name="Channel-Count", var_dtypes=[int], var_min=1, var_max=2 ** 8,
-                   series_len=None, series_trend=None, actions=["raise", "raise", "warn", "raise", "raise"])
+                   series_len=1, series_trend=None, actions=["raise", "raise", "warn", "raise", "raise"])
     input_validity(var_val=v_min, var_name="Min-Img-Value", var_dtypes=[int, float], var_min=-float("inf"),
-                   var_max=float("inf"), series_len=None, series_trend=None,
+                   var_max=float("inf"), series_len=1, series_trend=None,
                    actions=["raise", "raise", "raise", "raise", "raise"])
     input_validity(var_val=v_max, var_name="Max-Img-Value", var_dtypes=[int, float], var_min=-float("inf"),
-                   var_max=float("inf"), series_len=None, series_trend=None,
+                   var_max=float("inf"), series_len=1, series_trend=None,
                    actions=["raise", "raise", "raise", "raise", "raise"])
     input_validity(var_val=size, var_name="Item-Size", var_dtypes=[int, float, list, tuple],
                    var_min=4, var_max=min(x_res, y_res), series_len=2, series_trend="increasing",
@@ -146,19 +134,19 @@ def check_input_validity(sample_number, x_res, y_res, channels, v_min, v_max, si
     input_validity(var_val=label_count, var_name="Label-Count", var_dtypes=[int], var_min=1, var_max=float("inf"),
                    series_len=None, series_trend=None, actions=["raise", "raise", "raise", "raise", "raise"])
     input_validity(var_val=label_frequency, var_name="Label-Frequency", var_dtypes=[float, list, tuple],
-                   var_min=0, var_max=1, series_len=None, series_trend="increasing",
+                   var_min=0, var_max=1, series_len=2, series_trend="increasing",
                    actions=["raise", "raise", "raise", "raise", "raise"])
-    input_validity(var_val=path, var_name="Path", var_dtypes=[str, type(None)], var_min="", var_max="",
-                   series_len=None, series_trend="", actions=["raise", "raise", "raise", "raise", "raise"])
+    input_validity(var_val=path, var_name="Path", var_dtypes=[str], var_min="", var_max="",
+                   series_len=1, series_trend="", actions=["raise", "raise", "raise", "raise", "raise"])
     input_validity(var_val=export_type, var_name="Export-Type", var_dtypes=[str, type(None)], var_min="", var_max="",
-                   series_len=None, series_trend="", actions=["raise", "raise", "raise", "raise", "raise"])
+                   series_len=1, series_trend="", actions=["raise", "raise", "raise", "raise", "raise"])
     input_validity(var_val=verbose, var_name="Verbosity", var_dtypes=[bool], var_min="", var_max="",
-                   series_len=None, series_trend="", actions=["warning", "raise", "raise", "raise", "raise"])
+                   series_len=1, series_trend="", actions=["warning", "raise", "raise", "raise", "raise"])
     input_validity(var_val=random_seed, var_name="Random-Seed", var_dtypes=[int],
-                   var_min=-float("inf"), var_max=float("inf"), series_len=None, series_trend="",
+                   var_min=-float("inf"), var_max=float("inf"), series_len=0, series_trend="",
                    actions=["raise", "raise", "raise", "raise", "raise"])
     input_validity(var_val=random_channel_classes, var_name="Random-Channel-Classes", var_dtypes=[bool],
-                   var_min="", var_max="", series_len=None, series_trend="",
+                   var_min="", var_max="", series_len=1, series_trend="",
                    actions=["raise", "raise", "raise", "raise", "raise"])
 
     # Additional cleaning/verification for non-standard variables
@@ -174,13 +162,13 @@ def check_input_validity(sample_number, x_res, y_res, channels, v_min, v_max, si
         warnings.warn(f"v_min and v_max of 0-1 should be used when saving images!"
                       f"v_min and v_max of {v_min} and {v_max} found.")
 
-    # If export type is provided but no path
-    if export_type is not None and path is None:
-        raise Exception(f"Exporting enabled ({export_type}), but no path provided! Path: {path}")
+
+
+
 
 
 def input_validity(var_val, var_name, var_dtypes, var_min="", var_max="",
-                   series_len=2, series_trend=None, actions="warn"):
+                   series_len=2, series_trend=None, actions=["raise", "raise", "raise", "raise", "raise"]):
     """
     Sends messages to console for variable validating.
     Exceptions sourced from: https://docs.python.org/3/library/exceptions.html#exception-hierarchy
@@ -369,21 +357,66 @@ def export_images(image_matrix, label_matrix, path, export_type):
             pil_img.save(f"{path}\\Dataset\\{i:{img_number_length}}.png", "PNG")
 
         # Save label data
-        with open(f"{path}\\labels.csv", "w") as f:
+        with open(f"{path}\\Dataset\\labels.csv", "w") as f:
             for i in range(len(label_matrix)):
                 # Might be a better way to do this than to use all the replace commands...
                 txt_str = str(label_matrix[i]).replace("[", "").replace("]", "").replace(" ", ",")
                 f.write(f"{txt_str}\n")
     elif export_type == "pickle":
-        with open(f"{path}\\Images.pkl", "wb") as file:
+        with open(f"{path}\\Dataset\\Images.pkl", "wb") as file:
             pickle.dump(image_matrix, file)
-        with open(f"{path}\\Labels.pkl", "wb") as file:
+        with open(f"{path}\\Dataset\\Labels.pkl", "wb") as file:
             pickle.dump(label_matrix, file)
 
 
+def manage_export_path(export_type, path, verbose):
+    if export_type is not None:
+        # base directory doesn't exist, send a warning, but create it anyway.
+        if os.path.isdir(path) is False:
+            if verbose:
+                warnings.warn("Path provided may be one level too deep!"
+                              "This may result in the Dataset folder being in a sub-folder of the project.")
+            os.makedirs(path)
+
+        # If Datafolder exists, check and delete files within folder; otherwise, create the dataset folder.
+        if os.path.isdir(f"{path}\\Dataset"):
+            if verbose:
+                print("Main Export Folder already exists!")
+
+            # Gets all files and folders within the directory
+            files = [[dirpath, dirname, filename] for (dirpath, dirname, filename) in os.walk(f"{path}\\Dataset")]
+
+            files_found = False
+            for location in files:
+                if len(location[2]) != 0:
+                    files_found = True
+            if files_found and verbose:
+                warnings.warn(f"Files already found in or under folder: {path}\\Dataset. "
+                              f"Writing over!")
+
+            # Deleting all files in the dataset folder
+            for location in files:
+                if len(location[2]) > 0:
+                    for file in location[2]:
+                        os.remove(f"{location[0]}\\{file}")
+
+            # No sub-folders should exist in Dataset folder unless user-made.
+            # If they exist, script can't delete w/o admin privileges. Instead, just warn the user.
+            # Instead, just warn the user.
+            if verbose:
+                for location in files:
+                    if len(location[1]) > 0:
+                        for folder in location[1]:
+                            warnings.warn(f"Sub-folder(s) '{folder}' within dataset path: {path}\\Dataset.")
+        else:
+            if verbose:
+                print("Creating Dataset folder...")
+            os.makedirs(f"{path}\\Dataset")
+
+
 # Example usage:
-images, labels = generate_multilabel_toy_dataset(10000, label_count=3, frequency=[2, 20], path="Dataset",
-                                                  export_type="pickle", random_channel_classes=False)
+images, labels = generate_multilabel_toy_dataset(10000, label_count=3, frequency=[2, 20], path="",
+                                                 export_type="image_folder", random_channel_classes=False)
 
 # import timeit
 # print(timeit.repeat("generate_multilabel_toy_dataset(10000, label_count=3, frequency=[2, 20], path='Dataset', export_type=None)",
