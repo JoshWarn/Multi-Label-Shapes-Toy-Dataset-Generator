@@ -141,7 +141,7 @@ def check_input_validity(sample_number, x_res, y_res, channels, v_min, v_max, si
                    var_min=4, var_max=min(x_res, y_res), series_len=2, series_trend="increasing",
                    actions=["raise", "raise", "raise", "raise", "raise"])
     input_validity(var_val=frequency, var_name="Item-Frequency", var_dtypes=[int, list, tuple],
-                   var_min=1, var_max=float("inf"), series_len=None, series_trend=None,
+                   var_min=1, var_max=float("inf"), series_len=2, series_trend=None,
                    actions=["raise", "raise", "raise", "raise", "raise"])
     input_validity(var_val=label_count, var_name="Label-Count", var_dtypes=[int], var_min=1, var_max=float("inf"),
                    series_len=None, series_trend=None, actions=["raise", "raise", "raise", "raise", "raise"])
@@ -218,9 +218,9 @@ def input_validity(var_val, var_name, var_dtypes, var_min="", var_max="",
     # Checking variable min/max
     # If variable has multiple values, check each. Otherwise, check single value
     # This may not catch if numpy inputs are passed; perhaps revise later.
-    if var_val_type in ["list", "tuple"]:
+    if var_val_type in [list, tuple]:
         for val in var_val:
-            if type(val) in ["float", "int"]:
+            if type(val) in [float, int]:
                 if var_min != "":
                     if val < var_min:
                         if actions[1] == "warn":
@@ -234,7 +234,7 @@ def input_validity(var_val, var_name, var_dtypes, var_min="", var_max="",
                         elif actions[2] == "raise":
                             raise ValueError(max_val_error_msg)
     else:
-        if type(var_val) in ["float", "int"]:
+        if var_val_type in [float, int]:
             if var_min != "":
                 if var_val < var_min:
                     if actions[1] == "warn":
@@ -249,8 +249,8 @@ def input_validity(var_val, var_name, var_dtypes, var_min="", var_max="",
                         raise Exception(max_val_error_msg)
 
     # If series, ensuring length is valid
-    if var_val_type in ["list", "tuple"] and series_len != "":  # Don't know if this second part is required.
-        if len(var_val_type) != series_len:
+    if var_val_type in [list, tuple] and series_len != "":  # Don't know if this second part is required.
+        if len(var_val) != series_len:
             if actions[3] == "warn":
                 warnings.warn(series_len_error_msg)
             elif actions[3] == "raise":
@@ -280,7 +280,7 @@ def input_validity(var_val, var_name, var_dtypes, var_min="", var_max="",
 def draw_shapes(image, label, size, frequency, v_max, x_res, y_res, random_channel_classes):
     # Determines frequency of item in image; how many times to run the item loop.
     if type(frequency) is list:
-        item_count = np.random.randint(frequency[0], frequency[1])         # Determines number of items to place in
+        item_count = np.random.randint(frequency[0], frequency[1])
     else:
         item_count = frequency
 
@@ -358,12 +358,12 @@ def progressbar(percent, bar_len=50):
 
 def export_images(image_matrix, label_matrix, path, export_type):
     if export_type == "image_folder":
-        # Multiplying by 255 to get [0, 255] values; may be redundant if PIL works with 0-1 floats. TODO test later.
+        # Multiplying by 255 to get [0, 255] values for PIL
         saved_img_matrix = image_matrix*255
         # Gets the digit count of the dataset to use in file-naming.
         img_number_length = f"{len(str(len(image_matrix))):02}"
         for i in range(len(image_matrix)):
-            # convert image to PIL image and saveing the image
+            # convert image to PIL image and saving the image
             pil_img = Image.fromarray(saved_img_matrix[i].astype('uint8'))
             # save image
             pil_img.save(f"{path}\\Dataset\\{i:{img_number_length}}.png", "PNG")
@@ -383,7 +383,7 @@ def export_images(image_matrix, label_matrix, path, export_type):
 
 # Example usage:
 images, labels = generate_multilabel_toy_dataset(10000, label_count=3, frequency=[2, 20], path="Dataset",
-                                                  export_type="image_folder", random_channel_classes=False)
+                                                  export_type="pickle", random_channel_classes=False)
 
 # import timeit
 # print(timeit.repeat("generate_multilabel_toy_dataset(10000, label_count=3, frequency=[2, 20], path='Dataset', export_type=None)",
