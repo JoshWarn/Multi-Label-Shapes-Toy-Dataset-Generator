@@ -101,7 +101,7 @@ def generate_multilabel_toy_dataset(sample_number=1000, x_res=256, y_res=256, ch
     if export_type is not None:
         if verbose:
             print(f"Saving dataset to {export_type}...")
-        export_images(image_matrix, label_matrix, path, export_folder, export_type)
+        export_images(image_matrix, label_matrix, path, export_folder, export_type, verbose)
 
     if verbose:
         print(f"Dataset of {sample_number} {x_res}x{y_res}x{channels} samples built in {time.time()-start_time:0f} s.")
@@ -348,17 +348,22 @@ def progressbar(percent, bar_len=50):
         print(f"\rProgress: |{'█' * bar + '─' * (bar_len - bar)}| {100 * percent:f}%", end="")
 
 
-def export_images(image_matrix, label_matrix, path, export_folder, export_type):
+def export_images(image_matrix, label_matrix, path, export_folder, export_type, verbose):
     if export_type == "image_folder":
         # Multiplying by 255 to get [0, 255] values for PIL
         saved_img_matrix = image_matrix*255
         # Gets the digit count of the dataset to use in file-naming.
         img_number_length = f"{len(str(len(image_matrix))):02}"
         for i in range(len(image_matrix)):
+            # If verbose, create progress bar.
+            if verbose and i % 100 == 0:
+                progressbar(i / len(saved_img_matrix))
             # convert image to PIL image and saving the image
             pil_img = Image.fromarray(saved_img_matrix[i].astype('uint8'))
             # save image
             pil_img.save(f"{path}\\{export_folder}\\{i:{img_number_length}}.png", "PNG")
+        if verbose:
+            progressbar(1.)
 
         # Save label data
         with open(f"{path}\\{export_folder}\\labels.csv", "w") as f:
@@ -367,10 +372,14 @@ def export_images(image_matrix, label_matrix, path, export_folder, export_type):
                 txt_str = str(label_matrix[i]).replace("[", "").replace("]", "").replace(" ", ",")
                 f.write(f"{txt_str}\n")
     elif export_type == "pickle":
+        if verbose:
+            progressbar(0)
         with open(f"{path}\\{export_folder}\\Images.pkl", "wb") as file:
             pickle.dump(image_matrix, file)
         with open(f"{path}\\{export_folder}\\Labels.pkl", "wb") as file:
             pickle.dump(label_matrix, file)
+        if verbose:
+            progressbar(1)
 
 
 def manage_export_path(export_type, path, export_folder, verbose):
@@ -418,8 +427,9 @@ def manage_export_path(export_type, path, export_folder, verbose):
 
 
 # Example usage:
-images, labels = generate_multilabel_toy_dataset(10000, label_count=3, frequency=[2, 20], path="", export_folder="ShapesDataset",
-                                                 export_type="image_folder", random_channel_classes=False)
+images, labels = generate_multilabel_toy_dataset(10000, label_count=3, frequency=[2, 20], path="",
+                                                 export_folder="ShapesDataset", export_type="image_folder",
+                                                 random_channel_classes=False)
 
 # import timeit
 # print(timeit.repeat("generate_multilabel_toy_dataset(10000, label_count=3, frequency=[2, 20], path='Dataset', export_type=None)",
