@@ -360,15 +360,16 @@ def export_images(image_matrix, label_matrix, path, export_folder, export_type, 
             pil_img = Image.fromarray(saved_img_matrix[i].astype('uint8'))
             # save image
             pil_img.save(f"{path}\\{export_folder}\\{i:{img_number_length}}.png", "PNG")
-        if verbose:
-            progressbar(1.)
 
         # Save label data
         with open(f"{path}\\{export_folder}\\labels.csv", "w") as f:
             for i in range(len(label_matrix)):
                 # Might be a better way to do this than to use all the replace commands...
-                txt_str = str(label_matrix[i]).replace("[", "").replace("]", "").replace(" ", ",")
-                f.write(f"{txt_str}\n")
+                txt_str = str(label_matrix[i]).replace("[", "").replace("]", "").replace(" ", ", ")
+                f.write(f"{i:{img_number_length}}.png, {txt_str}\n")
+        if verbose:
+            progressbar(1.)
+
     elif export_type == "pickle":
         if verbose:
             progressbar(0)
@@ -428,9 +429,9 @@ def manage_export_path(export_type, path, export_folder, verbose):
 
 
 # Example usage:
-images, labels = generate_multilabel_toy_dataset(10000, label_count=3, frequency=[2, 20], path="",
+images, labels = generate_multilabel_toy_dataset(10000, label_count=5, frequency=[2, 20], path="",
                                                  export_folder="ShapesDataset", export_type="image_folder",
-                                                 random_channel_classes=False)
+                                                 random_channel_classes=True)
 
 # import timeit
 # print(timeit.repeat("generate_multilabel_toy_dataset(10000, label_count=3, frequency=[2, 20], path='Dataset', export_type=None)",
