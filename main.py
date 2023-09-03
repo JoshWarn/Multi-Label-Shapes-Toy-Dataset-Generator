@@ -24,45 +24,46 @@ import skimage
 
 
 def generate_multilabel_toy_dataset(sample_number=1000, x_res=256, y_res=256, channels=3, v_min=0, v_max=1,
-                                    size=[10, 40], frequency=[2, 20], label_count=3, label_frequency=0.5,
-                                    path="", export_folder="ShapesDataset", export_type=None, verbose=True, random_seed=0,
-                                    random_channel_classes=False):
+                                    size=(10, 40), frequency=(2, 20), label_count=3, label_frequency=0.5,
+                                    path="", export_folder="ShapesDataset", export_type=None, verbose=True,
+                                    random_seed=0, random_channel_classes=False):
     """
     Creates a dataset with basic shape perimeters; 1, 2, 3, 4... = circle, line, triangle, square etc...
-
     ~~ Image/Dataset options ~~
-    sample_number   - number of samples to generate
-    x_res, y_res    - dimensions of generated image
-    channels        - number of image channels to use
-    v_min, v_max    - minimum and maximum values used in channels (typically 0-1 for samples).
-    size            - how large to draw the items in the image
-    frequency       - how many items to draw on the image; can be set as a hard value or a range using [min, max]
-    label_count     - number of classes to generate dataset with
-    label_frequency - how frequently to have a label occur in an image; may be int or [max, min].
+    sample_number   - int; number of samples to generate
+    x_res, y_res    - int(s); dimensions of generated image
+    channels        - int; number of image channels to use
+    v_min, v_max    - int(s); minimum and maximum values used in channels (typically 0-1 for samples).
+    size            - int/[int, int]; how large to draw the items in the image
+    frequency       - int/[int, int]; how many items to draw on image; may be set single value or range using [min, max]
+    label_count     - int; number of classes to generate dataset with
+    label_frequency - int/[int, int]; how frequently to have a label occur in an image; may be int or [max, min]
 
     ~~ Saving options ~~
-    path            - where to save the dataset to
-    export_type  - if data should be saved in a certain format; None, "image_folder", "pickle".
+    path            - str; where to save the dataset to
+    export_folder   - str; name of the dataset folder
+    export_type     - str; if data should be saved in a certain format; None, "image_folder", "pickle".
 
     ~~ Misc ~~
-    verbose         - if info about building the dataset should be printed; progress bar & time taken.
-    random_seed     - sets random state; default 0.
-    random_channel_classes - allows channels to show up on random channels. Default disabled.
+    verbose         - bool; if info about building the dataset should be printed; progress bar & time taken.
+    random_seed     - int; sets random state; default 0.
+    random_channel_classes - bool; allows channels to show up on random channels. Default disabled.
     """
 
     # ~~ Input sanitization and verification ~~
-    check_input_validity(sample_number, x_res, y_res, channels, v_min, v_max, size, frequency, label_count,
-                         label_frequency, path, export_folder, export_type, verbose, random_seed, random_channel_classes)
+    check_input_validity(sample_number, x_res, y_res, channels, v_min, v_max, size, frequency,
+                         label_count, label_frequency, path, export_folder, export_type,
+                         verbose, random_seed, random_channel_classes)
 
     # ~~ Value initialization and pre-processing ~~
     start_time = time.time()
     np.random.seed(seed=random_seed)
+    # TODO Change np.uint8 to float. This is due to the fact that we have no idea what format v_min and v_max will be.
     image_matrix = np.full((sample_number, channels, y_res, x_res), v_min, dtype=np.uint8)
-    label_matrix = np.zeros((sample_number, label_count), dtype=np.uint8)
+    label_matrix = np.zeros((sample_number, label_count), dtype=np.bool_)
+    # If path provided use it; else get local project path.
+    path = path if path else os.path.abspath(os.getcwd())
 
-    # If no path is provided, get the local project path.
-    if path == "":
-        path = os.path.abspath(os.getcwd())
     # Detects if folder exists or has files; makes folder if it doesn't exist.
     manage_export_path(export_type, path, export_folder, verbose)
 
@@ -82,12 +83,18 @@ def generate_multilabel_toy_dataset(sample_number=1000, x_res=256, y_res=256, ch
     # ~~ Main Generation Loop ~~
     if verbose:
         print("Generating samples...")
+
     for i in range(sample_number):
+        # Updating the progress bar after each 100 samples
         if verbose and i % 100 == 0:
             progressbar(i/sample_number)
+
+        # For each label, if True draw shapes
         for j in range(label_count):
-            if label_matrix[i][j] == 1:
+            if label_matrix[i][j]:
                 image_matrix[i] = draw_shapes(image_matrix[i], j, size, frequency, v_max, x_res, y_res, random_channel_classes)
+
+    # Setting progress bar to completed
     if verbose:
         progressbar(1.)
 
@@ -158,7 +165,7 @@ def check_input_validity(sample_number, x_res, y_res, channels, v_min, v_max, si
     valid_exports = ["image_folder", "pickle", None]
     if export_type not in valid_exports:
         warnings.warn(f"Export type {export_type} not supported! Valid list: {valid_exports}")
-        raise BaseException("Unexpected export type!")
+        raise Exception("Unexpected export type!")
 
     # Raising a warning if value bounds aren't [0, 1] when exporting to image_folder:
     if (v_min != 0 or v_max != 1) and export_type == "image_folder":
@@ -167,7 +174,7 @@ def check_input_validity(sample_number, x_res, y_res, channels, v_min, v_max, si
 
 
 def input_validity(var_val, var_name, var_dtypes, var_min=None, var_max=None,
-                   series_len=2, series_trend=None, actions=["raise", "raise", "raise", "raise", "raise"]):
+                   series_len=1, series_trend=None, actions=("raise", "raise", "raise", "raise", "raise")):
     """
     Sends messages to console for variable validating.
     Exceptions sourced from: https://docs.python.org/3/library/exceptions.html#exception-hierarchy
@@ -266,11 +273,10 @@ def input_validity(var_val, var_name, var_dtypes, var_min=None, var_max=None,
 
 def draw_shapes(image, label, size, frequency, v_max, x_res, y_res, random_channel_classes):
     # Determines frequency of item in image; how many times to run the item loop.
-    if type(frequency) is list:
+    if type(frequency) in [list, tuple]:
         item_count = np.random.randint(frequency[0], frequency[1])
     else:
         item_count = frequency
-
     # Selecting what channel(s) to put shapes on:
     if random_channel_classes:
         # Using randint to make a boolean "channels-used" array which is then shuffled.
@@ -285,7 +291,7 @@ def draw_shapes(image, label, size, frequency, v_max, x_res, y_res, random_chann
     first_channel_used = np.argmax(channels_used == True)
     for i in range(item_count):
         # Determining size of sample
-        if type(size) is list:
+        if type(size) in [list, tuple]:
             item_size = np.random.randint(size[0], size[1])
         else:
             item_size = size
@@ -426,12 +432,12 @@ def manage_export_path(export_type, path, export_folder, verbose):
 
 
 # Example usage:
-images, labels = generate_multilabel_toy_dataset(10000, label_count=5, frequency=[2, 20], path="",
+images, labels = generate_multilabel_toy_dataset(10000, label_count=5, path="",
                                                  export_folder="ShapesDataset", export_type="image_folder",
                                                  random_channel_classes=True)
 
 # import timeit
-# print(timeit.repeat("generate_multilabel_toy_dataset(10000, label_count=3, frequency=[2, 20], path='Dataset', export_type=None)",
+# print(timeit.repeat("generate_multilabel_toy_dataset(10000, label_count=3, path='Dataset', export_type=None)",
 #                      "from __main__ import generate_multilabel_toy_dataset", repeat=6, number=1))
 """
 Time statistics:
