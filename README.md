@@ -43,14 +43,14 @@ The recommended use case is to create an easy dataset that any neural network sh
 - If messages should be shown (progress bar, comments)
 
 ### Features TODO:
-- ~~Detect files in dataset folder and replace them if generating new dataset.~~ (Added 8/30, Done 9/2/23)
-- Add more warnings, tracebacks, and comments. (Added 8/27)
+- ~~Detect files in dataset folder and replace them if generating a new dataset.~~ (Added 8/30, Done 9/2/23)
+- Add more warnings, tracebacks, and comments. (Added 8/27, Ongoing)
 - ~~Add an option to get rid of no-label images (all zeros).~~ (Added 8/27, Removed 8/30/23)
 - ~~Add a progress bar.~~ (Added 8/27, Done 8/30/23)
 - ~~Add a set seed for random numbers.~~ (Added 8/27, Done 8/30/23)
 - ~~Add channel-specific classes/shapes.~~ (Added 8/27, Done 8/30/23)
 - ~~Make an option to export a pickle file.~~ (Added 8/27, Done 8/29/23)
-- ~~Allow different classes to have different frequencies (currently only a single-hardset value).~~ (Added 8/27, Done 8/29/23)
+- ~~Allow different classes to have different frequencies (currently only a single-hard-set value).~~ (Added 8/27, Done 8/29/23)
 
 ### Examples:
 256x256x3 5-labels dataset with all 5 classes (circles, lines, triangles, squares, pentagons):
@@ -58,7 +58,7 @@ The recommended use case is to create an easy dataset that any neural network sh
 ![00020](https://github.com/JoshWarn/MultiLabelToyDatasetGenerator/assets/70070682/9b882357-44e8-4934-828c-c8d49bf0ae25)
 
 ### Durations to generate and save datasets (may vary on differing hardware):
-| Generation Parameters  | Generated (s) | Generated + Image_Folder (s) | Generated + Pickle (s) |
+| Generation Parameters  | Generated (s) | Generated + Pickle (s) | Generated + Image_Folder (s) |
 | :------------ |:---------------:|:-----:|:-----:|
-| 10,000 256x256x3 3-label| 6.8 | 31 | XX |
-| 10,000 256x256x3 5-label| 14.2| 39 | XX |
+| 10,000 256x256x3 3-label Default | 5.0 | 16.5 | 30.4 |
+| 10,000 256x256x3 5-label Default | 10.8 | 22.2 | 40.4 |
