@@ -2,7 +2,7 @@ import os
 import time
 import pickle
 import warnings
-
+import copy
 import numpy as np
 from PIL import Image
 import skimage
@@ -92,6 +92,7 @@ def generate_multilabel_toy_dataset(sample_number=1000, x_res=256, y_res=256, ch
             progressbar(i/sample_number)
 
         # For each label, if True draw shapes
+        print(f"Image {i}: {label_matrix[i]}")
         for j in range(label_count):
             if label_matrix[i][j]:
                 image_matrix[i] = draw_shapes(image_matrix[i], j, size, frequency, v_max, x_res, y_res,
@@ -102,6 +103,9 @@ def generate_multilabel_toy_dataset(sample_number=1000, x_res=256, y_res=256, ch
         progressbar(1.)
 
     # ~~ Postprocessing ~~
+    # Clipping values to v_max: This is due to a poor solution when combining channels for different shapes.
+    image_matrix = np.clip(image_matrix, v_min, v_max)
+
     # Changing the order of dimensions in image matrix to make saving and opening easy.
     image_matrix = np.transpose(image_matrix, (0, 2, 3, 1))
 
@@ -284,8 +288,7 @@ def draw_shapes(image, label, size, frequency, v_max, x_res, y_res, random_chann
     if random_channel_classes:
         # Using randint to make a boolean "channels-used" array which is then shuffled.
         # Ensures that at least 1 channel has the shapes.
-        # num_used_channels = np.random.randint(1, len(image) + 1)
-        num_used_channels = rng.integers(1, len(image) + 1)
+        num_used_channels = rng.integers(1, len(image))
         channels_used = np.array([True] * num_used_channels + [False]*(len(image)-num_used_channels), dtype=bool)
         np.random.shuffle(channels_used)
     else:
@@ -293,7 +296,6 @@ def draw_shapes(image, label, size, frequency, v_max, x_res, y_res, random_chann
         channels_used = np.ones(len(image), dtype=bool)
 
     first_channel_used = np.argmax(channels_used == True)
-
     # Determining size of samples
     if type(size) in [list, tuple]:
         item_size_list = rng.integers(size[0], size[1], item_count)
@@ -334,9 +336,10 @@ def draw_shapes(image, label, size, frequency, v_max, x_res, y_res, random_chann
                     image[first_channel_used][rr, cc] = v_max
 
     # sets all other channels to the first channel if used
-    for j in range(first_channel_used+1, len(image)):
+    for j in range(first_channel_used + 1, len(image)):
         if channels_used[j]:
-            image[j] = image[first_channel_used]
+            # This is a really sketchy solution; it depends on values being truncated to channel-max-limits postprocess.
+            image[j] += image[first_channel_used]
 
     return image
 
@@ -449,9 +452,9 @@ def manage_export_path(export_type, path, export_folder, verbose):
 
 
 # Example usage:
-# images, labels = generate_multilabel_toy_dataset(10000, label_count=2, path="",
-#                                                  export_folder="ShapesDataset", export_type="image_folder",
-#                                                  random_channel_classes=True)
+images, labels = generate_multilabel_toy_dataset(20, label_count=2, path="",
+                                                 export_folder="ShapesDataset", export_type="image_folder",
+                                                 random_channel_classes=True)
 
 # Timing
 """
