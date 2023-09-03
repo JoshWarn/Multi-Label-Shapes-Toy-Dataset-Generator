@@ -92,7 +92,6 @@ def generate_multilabel_toy_dataset(sample_number=1000, x_res=256, y_res=256, ch
             progressbar(i/sample_number)
 
         # For each label, if True draw shapes
-        print(f"Image {i}: {label_matrix[i]}")
         for j in range(label_count):
             if label_matrix[i][j]:
                 image_matrix[i] = draw_shapes(image_matrix[i], j, size, frequency, v_max, x_res, y_res,
@@ -452,7 +451,7 @@ def manage_export_path(export_type, path, export_folder, verbose):
 
 
 # Example usage:
-images, labels = generate_multilabel_toy_dataset(20, label_count=2, path="",
+images, labels = generate_multilabel_toy_dataset(10000, label_count=5, path="",
                                                  export_folder="ShapesDataset", export_type="image_folder",
                                                  random_channel_classes=True)
 
