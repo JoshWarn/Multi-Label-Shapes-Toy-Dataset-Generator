@@ -58,8 +58,7 @@ def generate_multilabel_toy_dataset(sample_number=1000, x_res=256, y_res=256, ch
     # ~~ Value initialization and pre-processing ~~
     start_time = time.time()
     np.random.seed(seed=random_seed)
-    # TODO Change np.uint8 to float. This is due to the fact that we have no idea what format v_min and v_max will be.
-    image_matrix = np.full((sample_number, channels, y_res, x_res), v_min, dtype=np.uint8)
+    image_matrix = np.full((sample_number, channels, y_res, x_res), v_min, dtype=np.float32)
     label_matrix = np.zeros((sample_number, label_count), dtype=np.bool_)
     # If path provided use it; else get local project path.
     path = path if path else os.path.abspath(os.getcwd())
@@ -432,9 +431,9 @@ def manage_export_path(export_type, path, export_folder, verbose):
 
 
 # Example usage:
-images, labels = generate_multilabel_toy_dataset(10000, label_count=5, path="",
-                                                 export_folder="ShapesDataset", export_type="image_folder",
-                                                 random_channel_classes=True)
+# images, labels = generate_multilabel_toy_dataset(10000, label_count=5, path="",
+#                                                  export_folder="ShapesDataset", export_type="image_folder",
+#                                                  random_channel_classes=True)
 
 # import timeit
 # print(timeit.repeat("generate_multilabel_toy_dataset(10000, label_count=3, path='Dataset', export_type=None)",
