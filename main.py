@@ -57,6 +57,7 @@ def generate_multilabel_toy_dataset(sample_number=1000, x_res=256, y_res=256, ch
 
     # ~~ Value initialization and pre-processing ~~
     start_time = time.time()
+    rng = np.random.default_rng(seed=random_seed)
     np.random.seed(seed=random_seed)
     image_matrix = np.full((sample_number, channels, y_res, x_res), v_min, dtype=np.float32)
     label_matrix = np.zeros((sample_number, label_count), dtype=np.bool_)
@@ -91,7 +92,8 @@ def generate_multilabel_toy_dataset(sample_number=1000, x_res=256, y_res=256, ch
         # For each label, if True draw shapes
         for j in range(label_count):
             if label_matrix[i][j]:
-                image_matrix[i] = draw_shapes(image_matrix[i], j, size, frequency, v_max, x_res, y_res, random_channel_classes)
+                image_matrix[i] = draw_shapes(image_matrix[i], j, size, frequency, v_max, x_res, y_res,
+                                              random_channel_classes, rng)
 
     # Setting progress bar to completed
     if verbose:
@@ -270,7 +272,7 @@ def input_validity(var_val, var_name, var_dtypes, var_min=None, var_max=None,
                         raise Exception(series_trend_error_msg)
 
 
-def draw_shapes(image, label, size, frequency, v_max, x_res, y_res, random_channel_classes):
+def draw_shapes(image, label, size, frequency, v_max, x_res, y_res, random_channel_classes, rng):
     # Determines frequency of item in image; how many times to run the item loop.
     if type(frequency) in [list, tuple]:
         item_count = np.random.randint(frequency[0], frequency[1])
@@ -288,34 +290,46 @@ def draw_shapes(image, label, size, frequency, v_max, x_res, y_res, random_chann
         channels_used = np.ones(len(image), dtype=bool)
 
     first_channel_used = np.argmax(channels_used == True)
-    for i in range(item_count):
-        # Determining size of sample
-        if type(size) in [list, tuple]:
-            item_size = np.random.randint(size[0], size[1])
-        else:
-            item_size = size
 
-        # Generate a circle within the range to use as bounds for the shape.
-        ry = np.random.randint(0 + item_size, y_res - item_size - 1)
-        cx = np.random.randint(0 + item_size, x_res - item_size - 1)
+    # Determining size of samples
+    if type(size) in [list, tuple]:
+        item_size_list = np.random.randint(size[0], size[1], item_count)
+    else:
+        item_size_list = np.full(item_count, size)
 
+    # Generating random centers within ranges to use as bounds for the shapes.
+    ry_l = ((rng.random(item_count) * (y_res - 2 * item_size_list)) + item_size_list).astype(int)
+    cx_l = ((rng.random(item_count) * (x_res - 2 * item_size_list)) + item_size_list).astype(int)
+
+    if label == 0:
+        for i in range(item_count):
+            rr, cc = skimage.draw.circle_perimeter(ry_l[i], cx_l[i], int(item_size_list[i] / 2))
+            image[first_channel_used][rr, cc] = v_max
+    else:
         # Have to add 2 to the label to generate the correct number of points;
         # generates 1 extra to correctly space points in the linear space function.
-        angle_list = ((np.linspace(0, 1, label + 2) + np.random.random_sample()) % 1) * 2*np.pi
-        x_pos_list = (ry + np.cos(angle_list[0:-1]) * item_size).astype(int)
-        y_pos_list = (cx + np.sin(angle_list[0:-1]) * item_size).astype(int)
+        linear_space = np.tile(np.linspace(0, 1, label + 2)[0:-1], (item_count, 1))
+        random_angle_offset = np.reshape(rng.random(size=item_count), (item_count, 1))
+        angle_matrix = (linear_space + random_angle_offset % 1) * 2*np.pi
 
-        if label == 0:
-            rr, cc = skimage.draw.circle_perimeter(ry, cx, int(item_size / 2))
-            image[first_channel_used][rr, cc] = v_max
-        elif label == 1:
-            for k in range(len(x_pos_list) - 1):
-                rr, cc = skimage.draw.line(y_pos_list[k], x_pos_list[k], y_pos_list[k + 1], x_pos_list[k + 1])
-                image[first_channel_used][rr, cc] = v_max
+        item_size_list = np.reshape(item_size_list, (item_count, 1))
+
+        ry_l = np.reshape(ry_l, (item_count, 1))
+        cx_l = np.reshape(cx_l, (item_count, 1))
+
+        x_pos_matrix = (ry_l + np.cos(angle_matrix) * item_size_list).astype(int)
+        y_pos_matrix = (cx_l + np.sin(angle_matrix) * item_size_list).astype(int)
+
+        if label == 1:
+            for i in range(item_count):
+                for k in range(len(x_pos_matrix[i]) - 1):
+                    rr, cc = skimage.draw.line(y_pos_matrix[i][k], x_pos_matrix[i][k], y_pos_matrix[i][k + 1], x_pos_matrix[i][k + 1])
+                    image[first_channel_used][rr, cc] = v_max
         else:
-            for k in range(len(x_pos_list)):
-                rr, cc = skimage.draw.line(y_pos_list[k - 1], x_pos_list[k - 1], y_pos_list[k], x_pos_list[k])
-                image[first_channel_used][rr, cc] = v_max
+            for i in range(item_count):
+                for k in range(len(x_pos_matrix[i])):
+                    rr, cc = skimage.draw.line(y_pos_matrix[i][k - 1], x_pos_matrix[i][k - 1], y_pos_matrix[i][k], x_pos_matrix[i][k])
+                    image[first_channel_used][rr, cc] = v_max
 
     # sets all other channels to the first channel if used
     for j in range(first_channel_used+1, len(image)):
@@ -435,11 +449,11 @@ def manage_export_path(export_type, path, export_folder, verbose):
 #                                                  export_folder="ShapesDataset", export_type="image_folder",
 #                                                  random_channel_classes=True)
 
-# import timeit
-# print(timeit.repeat("generate_multilabel_toy_dataset(10000, label_count=3, path='Dataset', export_type=None)",
-#                      "from __main__ import generate_multilabel_toy_dataset", repeat=6, number=1))
+#import timeit
+#print(timeit.repeat("generate_multilabel_toy_dataset(10000, label_count=3, path='', export_type=None)",
+#                     "from __main__ import generate_multilabel_toy_dataset", repeat=6, number=1))
 """
-Time statistics:
+Time Statistics Notes: Will Be Removed on Release
 8/29/23 6:15 PM
 10k-3l: 6.9095, 6.965, 7.092, 7.134, 6.986
 10k-5l: 14.293532099982258, 14.326442399993539, 14.194133099983446, 14.242385699995793, 14.304134599980898
@@ -447,4 +461,12 @@ Time statistics:
 9/1/23 8:53 PM
 10k-3l: 7.980153200100176, 6.761500300024636, 6.769760199938901, 6.751440299907699, 6.677566699916497, 6.732773500028998
 10k-5l: 14.21016500005498, 14.10257089999504, 14.03012620005756, 14.49815839994698, 14.05022810003720, 14.01318210002500
+
+9/3/23 10:47 AM
+10k-3l: 7.47453360003419, 7.553757000016048, 7.5641286000609, 7.513953900081105, 7.49404060002416, 7.557089700014330
+10k-5l: 14.99204309994820, 14.78349519998300, 14.85193130001425, 14.8092820999445, 15.00487050006631, 14.93172400002367
+
+9/3/23 12:30 PM
+10-3l: 5.0676012999610975, 4.9899791000643745, 4.986720799934119, 4.97400520008523, 4.98706079996191, 4.945403099991381
+10k-5l: 10.61603450006805, 10.70969389996025, 10.54121439997106, 10.56408889999147, 10.5126473000273, 10.57798940001521
 """
