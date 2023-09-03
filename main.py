@@ -275,14 +275,15 @@ def input_validity(var_val, var_name, var_dtypes, var_min=None, var_max=None,
 def draw_shapes(image, label, size, frequency, v_max, x_res, y_res, random_channel_classes, rng):
     # Determines frequency of item in image; how many times to run the item loop.
     if type(frequency) in [list, tuple]:
-        item_count = np.random.randint(frequency[0], frequency[1])
+        item_count = rng.integers(frequency[0], frequency[1])
     else:
         item_count = frequency
     # Selecting what channel(s) to put shapes on:
     if random_channel_classes:
         # Using randint to make a boolean "channels-used" array which is then shuffled.
         # Ensures that at least 1 channel has the shapes.
-        num_used_channels = np.random.randint(1, len(image) + 1)
+        # num_used_channels = np.random.randint(1, len(image) + 1)
+        num_used_channels = rng.integers(1, len(image) + 1)
         channels_used = np.array([True] * num_used_channels + [False]*(len(image)-num_used_channels), dtype=bool)
         np.random.shuffle(channels_used)
     else:
@@ -293,14 +294,13 @@ def draw_shapes(image, label, size, frequency, v_max, x_res, y_res, random_chann
 
     # Determining size of samples
     if type(size) in [list, tuple]:
-        item_size_list = np.random.randint(size[0], size[1], item_count)
+        item_size_list = rng.integers(size[0], size[1], item_count)
     else:
         item_size_list = np.full(item_count, size)
 
     # Generating random centers within ranges to use as bounds for the shapes.
     ry_l = ((rng.random(item_count) * (y_res - 2 * item_size_list)) + item_size_list).astype(int)
     cx_l = ((rng.random(item_count) * (x_res - 2 * item_size_list)) + item_size_list).astype(int)
-
     if label == 0:
         for i in range(item_count):
             rr, cc = skimage.draw.circle_perimeter(ry_l[i], cx_l[i], int(item_size_list[i] / 2))
@@ -347,7 +347,7 @@ def progressbar(percent, bar_len=50):
     :return: None
     """
     # Input sanitization/verification
-    if not 0 <= percent <= 1 or type(percent) is not float:
+    if not 0 <= percent <= 1 or type(percent) not in [float, int]:
         print(f"Percentage value of Value:{percent} Type:{type(percent)} not supported!")
 
     if bar_len <= 1 or type(bar_len) is not int:
@@ -381,7 +381,7 @@ def export_images(image_matrix, label_matrix, path, export_folder, export_type, 
         with open(f"{path}\\{export_folder}\\labels.csv", "w") as f:
             for i in range(len(label_matrix)):
                 # Might be a better way to do this than to use all the replace commands...
-                txt_str = str(label_matrix[i]).replace("[", "").replace("]", "").replace(" ", ", ")
+                txt_str = str(label_matrix[i]).replace("[", "").replace("]", "").replace(" ", ",")
                 f.write(f"{i:{img_number_length}}.png, {txt_str}\n")
         if verbose:
             progressbar(1.)
@@ -445,15 +445,26 @@ def manage_export_path(export_type, path, export_folder, verbose):
 
 
 # Example usage:
-# images, labels = generate_multilabel_toy_dataset(10000, label_count=5, path="",
-#                                                  export_folder="ShapesDataset", export_type="image_folder",
-#                                                  random_channel_classes=True)
+images, labels = generate_multilabel_toy_dataset(10000, label_count=5, path="",
+                                                 export_folder="ShapesDataset", export_type="image_folder",
+                                                 random_channel_classes=True)
 
-#import timeit
-#print(timeit.repeat("generate_multilabel_toy_dataset(10000, label_count=3, path='', export_type=None)",
-#                     "from __main__ import generate_multilabel_toy_dataset", repeat=6, number=1))
+# Timing
 """
-Time Statistics Notes: Will Be Removed on Release
+import timeit
+import matplotlib.pyplot as plt
+times = timeit.repeat("generate_multilabel_toy_dataset(10000, label_count=5, path='', export_type=None)",
+                     "from __main__ import generate_multilabel_toy_dataset", repeat=10, number=1)
+bins = np.linspace(min(times), max(times), 10)
+avg_time = sum(times)/len(times)
+stdev = np.std(times)
+print(f"Average Time: {avg_time}, std: {stdev}")
+print(times)
+plt.hist(times, bins)
+plt.show()
+"""
+# Time Statistics Notes: Will Be Removed on Release
+"""
 8/29/23 6:15 PM
 10k-3l: 6.9095, 6.965, 7.092, 7.134, 6.986
 10k-5l: 14.293532099982258, 14.326442399993539, 14.194133099983446, 14.242385699995793, 14.304134599980898
@@ -466,7 +477,5 @@ Time Statistics Notes: Will Be Removed on Release
 10k-3l: 7.47453360003419, 7.553757000016048, 7.5641286000609, 7.513953900081105, 7.49404060002416, 7.557089700014330
 10k-5l: 14.99204309994820, 14.78349519998300, 14.85193130001425, 14.8092820999445, 15.00487050006631, 14.93172400002367
 
-9/3/23 12:30 PM
-10-3l: 5.0676012999610975, 4.9899791000643745, 4.986720799934119, 4.97400520008523, 4.98706079996191, 4.945403099991381
-10k-5l: 10.61603450006805, 10.70969389996025, 10.54121439997106, 10.56408889999147, 10.5126473000273, 10.57798940001521
+9/3/23 2:13 PM
 """
