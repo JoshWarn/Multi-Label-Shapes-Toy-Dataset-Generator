@@ -48,6 +48,8 @@ def generate_multilabel_toy_dataset(sample_number=1000, x_res=256, y_res=256, ch
     verbose         - bool; if info about building the dataset should be printed; progress bar & time taken.
     random_seed     - int; sets random state; default 0.
     random_channel_classes - bool; allows channels to show up on random channels. Default disabled.
+
+    TODO: Sometimes label file is wrong?!? Fix.
     """
 
     # ~~ Input sanitization and verification ~~
@@ -381,8 +383,10 @@ def export_images(image_matrix, label_matrix, path, export_folder, export_type, 
         with open(f"{path}\\{export_folder}\\labels.csv", "w") as f:
             for i in range(len(label_matrix)):
                 # Might be a better way to do this than to use all the replace commands...
-                txt_str = str(label_matrix[i]).replace("[", "").replace("]", "").replace(" ", ",")
-                f.write(f"{i:{img_number_length}}.png, {txt_str}\n")
+                # Issues with numpy boolean array; there's an extra white-space before "True" to pad with "False".
+
+                txt_str = str(label_matrix[i]).replace("[", "").replace("]", "").replace(" True", "True").replace(" ", ", ")
+                f.write(f"{i:{img_number_length}}.png, {str(txt_str)}\n")
         if verbose:
             progressbar(1.)
 
@@ -445,9 +449,9 @@ def manage_export_path(export_type, path, export_folder, verbose):
 
 
 # Example usage:
-images, labels = generate_multilabel_toy_dataset(10000, label_count=5, path="",
-                                                 export_folder="ShapesDataset", export_type="image_folder",
-                                                 random_channel_classes=True)
+# images, labels = generate_multilabel_toy_dataset(10000, label_count=2, path="",
+#                                                  export_folder="ShapesDataset", export_type="image_folder",
+#                                                  random_channel_classes=True)
 
 # Timing
 """
