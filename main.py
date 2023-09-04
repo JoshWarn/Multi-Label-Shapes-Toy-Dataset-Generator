@@ -204,7 +204,7 @@ def input_validity(var_val, var_name, var_dtypes, var_min=None, var_max=None,
     # Error messages:
     dtype_error_msg = f"Expected {var_name} dtype in {var_dtypes}, but {var_val_type} was found."
     min_val_error_msg = f"Value of {var_val} in {var_name} is less than {var_min}."
-    max_val_error_msg = f"Value of {var_val} in {var_name} is more than {var_min}."
+    max_val_error_msg = f"Value of {var_val} in {var_name} is more than {var_max}."
     series_len_error_msg = f"Variable length of {var_val} in {var_name} isn't equal to {series_len}."
     series_trend_error_msg = f"Series trend of {var_name} expected to be {series_trend}, but was {var_val}."
 
@@ -301,12 +301,15 @@ def draw_shapes(image, label, size, frequency, v_max, x_res, y_res, random_chann
     else:
         item_size_list = np.full(item_count, size)
 
+    # item_size_list is DIAMETER
     # Generating random centers within ranges to use as bounds for the shapes.
-    ry_l = ((rng.random(item_count) * (y_res - 2 * item_size_list)) + item_size_list).astype(int)
-    cx_l = ((rng.random(item_count) * (x_res - 2 * item_size_list)) + item_size_list).astype(int)
+
+    ry_l = ((rng.random(item_count) * (y_res - (item_size_list+2))) + item_size_list/2 + 1).astype(int)
+    cx_l = ((rng.random(item_count) * (x_res - (item_size_list+2))) + item_size_list/2 + 1).astype(int)
     if label == 0:
         for i in range(item_count):
             rr, cc = skimage.draw.circle_perimeter(ry_l[i], cx_l[i], int(item_size_list[i] / 2))
+            # print(item_size_list[i], ry_l[i], cx_l[i])
             image[first_channel_used][rr, cc] = v_max
     else:
         # Have to add 2 to the label to generate the correct number of points;
@@ -320,13 +323,15 @@ def draw_shapes(image, label, size, frequency, v_max, x_res, y_res, random_chann
         ry_l = np.reshape(ry_l, (item_count, 1))
         cx_l = np.reshape(cx_l, (item_count, 1))
 
-        x_pos_matrix = (ry_l + np.cos(angle_matrix) * item_size_list).astype(int)
-        y_pos_matrix = (cx_l + np.sin(angle_matrix) * item_size_list).astype(int)
+        # Divided Item_size by 2 to properly use radii instead of diameter.
+        x_pos_matrix = (cx_l + np.cos(angle_matrix) * item_size_list/2).astype(int)
+        y_pos_matrix = (ry_l + np.sin(angle_matrix) * item_size_list/2).astype(int)
 
         if label == 1:
             for i in range(item_count):
                 for k in range(len(x_pos_matrix[i]) - 1):
                     rr, cc = skimage.draw.line(y_pos_matrix[i][k], x_pos_matrix[i][k], y_pos_matrix[i][k + 1], x_pos_matrix[i][k + 1])
+                    # print(ry_l[i], cx_l[i], item_size_list[i])
                     image[first_channel_used][rr, cc] = v_max
         else:
             for i in range(item_count):
@@ -451,9 +456,9 @@ def manage_export_path(export_type, path, export_folder, verbose):
 
 
 # Example usage:
-images, labels = generate_multilabel_toy_dataset(10000, label_count=5, path="",
-                                                 export_folder="ShapesDataset", export_type="image_folder",
-                                                 random_channel_classes=True)
+#images, labels = generate_multilabel_toy_dataset(10000, label_count=5, path="", x_res=512, y_res=128, size=(10, 40),
+#                                                 export_folder="ShapesDataset", export_type='image_folder',
+#                                                 random_channel_classes=False)
 
 # Timing
 """
