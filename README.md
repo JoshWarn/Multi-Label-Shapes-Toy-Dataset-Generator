@@ -54,6 +54,7 @@ The recommended use case is to create an easy dataset that any neural network sh
 
 ### Examples:
 3-labels: (circles, lines, triangles)
+
 5-labels: (circles, lines, triangles, squares, pentagons)
 |256x256x3 5-labels w/ all 5 classes:| 256x256x3 5-labels w/ 5 classes & random_channel_classes:|
 |:---------------:|:---------------:|
