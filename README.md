@@ -53,9 +53,13 @@ The recommended use case is to create an easy dataset that any neural network sh
 - ~~Allow different classes to have different frequencies (currently only a single-hard-set value).~~ (Added 8/27, Done 8/29/23)
 
 ### Examples:
-|256x256x3 5-labels dataset with all 5 classes (circles, lines, triangles, squares, pentagons): | 256x256x3 5-labels random_channel_classes |
+3-labels: (circles, lines, triangles)
+5-labels: (circles, lines, triangles, squares, pentagons)
+|256x256x3 5-labels w/ | 256x256x3 5-labels w/ |
+|5 classes:|  5 classes & random_channel_classes:|
 |:---------------:|:---------------:|
-| ![00020](https://github.com/JoshWarn/MultiLabelToyDatasetGenerator/assets/70070682/9b882357-44e8-4934-828c-c8d49bf0ae25) |![03149](https://github.com/JoshWarn/Multi-Label-Shapes-Toy-Dataset-Generator/assets/70070682/f4ab3a52-c32b-4d55-bc6c-7c56a6769be5)|
+| ![00020](https://github.com/JoshWarn/MultiLabelToyDatasetGenerator/assets/70070682/9b882357-44e8-4934-828c-c8d49bf0ae25) |![00086](https://github.com/JoshWarn/Multi-Label-Shapes-Toy-Dataset-Generator/assets/70070682/f01bf01a-7ef5-49fc-adf1-30cb6fd05fad)|
+
 
 
 ### Durations to generate and save datasets (may vary on differing hardware):
