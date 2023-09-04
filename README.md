@@ -55,8 +55,7 @@ The recommended use case is to create an easy dataset that any neural network sh
 ### Examples:
 3-labels: (circles, lines, triangles)
 5-labels: (circles, lines, triangles, squares, pentagons)
-|256x256x3 5-labels w/ | 256x256x3 5-labels w/ |
-|5 classes:|  5 classes & random_channel_classes:|
+|256x256x3 5-labels w/ all 5 classes:| 256x256x3 5-labels w/ 5 classes & random_channel_classes:|
 |:---------------:|:---------------:|
 | ![00020](https://github.com/JoshWarn/MultiLabelToyDatasetGenerator/assets/70070682/9b882357-44e8-4934-828c-c8d49bf0ae25) |![00086](https://github.com/JoshWarn/Multi-Label-Shapes-Toy-Dataset-Generator/assets/70070682/f01bf01a-7ef5-49fc-adf1-30cb6fd05fad)|
 
