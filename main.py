@@ -2,7 +2,6 @@ import os
 import time
 import pickle
 import warnings
-import copy
 import numpy as np
 from PIL import Image
 import skimage
@@ -24,7 +23,7 @@ import skimage
 
 
 def generate_multilabel_toy_dataset(sample_number=1000, x_res=256, y_res=256, channels=3, v_min=0, v_max=1,
-                                    size=(10, 40), frequency=(2, 20), label_count=3, label_frequency=0.5,
+                                    size=(10, 40), frequency=(2, 20), label_count=3, label_frequency=0.5, opacity=1,
                                     path="", export_folder="ShapesDataset", export_type=None, verbose=True,
                                     random_seed=0, random_channel_classes=False):
     """
@@ -38,6 +37,7 @@ def generate_multilabel_toy_dataset(sample_number=1000, x_res=256, y_res=256, ch
     frequency       - int/[int, int]; how many items to draw on image; may be set single value or range using [min, max]
     label_count     - int; number of classes to generate dataset with
     label_frequency - int/[int, int]; how frequently to have a label occur in an image; may be int or [max, min]
+    opacity         - float; how transparent a generated shape is; 0 = transparent, 1 is opaque.
 
     ~~ Saving options ~~
     path            - str; where to save the dataset to
@@ -54,7 +54,7 @@ def generate_multilabel_toy_dataset(sample_number=1000, x_res=256, y_res=256, ch
 
     # ~~ Input sanitization and verification ~~
     check_input_validity(sample_number, x_res, y_res, channels, v_min, v_max, size, frequency,
-                         label_count, label_frequency, path, export_folder, export_type,
+                         label_count, label_frequency, opacity, path, export_folder, export_type,
                          verbose, random_seed, random_channel_classes)
 
     # ~~ Value initialization and pre-processing ~~
@@ -94,7 +94,7 @@ def generate_multilabel_toy_dataset(sample_number=1000, x_res=256, y_res=256, ch
         # For each label, if True draw shapes
         for j in range(label_count):
             if label_matrix[i][j]:
-                image_matrix[i] = draw_shapes(image_matrix[i], j, size, frequency, v_max, x_res, y_res,
+                image_matrix[i] = draw_shapes(image_matrix[i], j, size, frequency, opacity, x_res, y_res,
                                               random_channel_classes, rng)
 
     # Setting progress bar to completed
@@ -120,7 +120,7 @@ def generate_multilabel_toy_dataset(sample_number=1000, x_res=256, y_res=256, ch
 
 
 def check_input_validity(sample_number, x_res, y_res, channels, v_min, v_max, size, frequency,
-                         label_count, label_frequency, path, export_folder, export_type,
+                         label_count, label_frequency, opacity, path, export_folder, export_type,
                          verbose, random_seed, random_channel_classes):
     """
     Checks the validity of all inputs; broken into a separate function for code-cleanliness
@@ -149,6 +149,9 @@ def check_input_validity(sample_number, x_res, y_res, channels, v_min, v_max, si
                    series_len=1, series_trend=None, actions=["raise", "raise", "raise", "raise", "raise"])
     input_validity(var_val=label_frequency, var_name="Label-Frequency", var_dtypes=[float, list, tuple],
                    var_min=0, var_max=1, series_len=2, series_trend="increasing",
+                   actions=["raise", "raise", "raise", "raise", "raise"])
+    input_validity(var_val=opacity, var_name="Opacity", var_dtypes=[int, float],
+                   var_min=0+1E-10, var_max=1, series_len=1, series_trend=None,
                    actions=["raise", "raise", "raise", "raise", "raise"])
     input_validity(var_val=path, var_name="Path", var_dtypes=[str], var_min="", var_max="",
                    series_len=1, series_trend="", actions=["raise", "raise", "raise", "raise", "raise"])
@@ -277,7 +280,7 @@ def input_validity(var_val, var_name, var_dtypes, var_min=None, var_max=None,
                         raise Exception(series_trend_error_msg)
 
 
-def draw_shapes(image, label, size, frequency, v_max, x_res, y_res, random_channel_classes, rng):
+def draw_shapes(image, label, size, frequency, opacity, x_res, y_res, random_channel_classes, rng):
     # Determines frequency of item in image; how many times to run the item loop.
     if type(frequency) in [list, tuple]:
         item_count = rng.integers(frequency[0], frequency[1])
@@ -294,26 +297,24 @@ def draw_shapes(image, label, size, frequency, v_max, x_res, y_res, random_chann
         # If not random, select all channels.
         channels_used = np.ones(len(image), dtype=bool)
 
-    first_channel_used = np.argmax(channels_used == True)
-    # Determining size of samples
+    # Determining size of sample diameters
     if type(size) in [list, tuple]:
         item_size_list = rng.integers(size[0], size[1], item_count)
     else:
         item_size_list = np.full(item_count, size)
 
-    # item_size_list is DIAMETER
-    # Generating random centers within ranges to use as bounds for the shapes.
+    # Make a zeros-array of the image-shape.
+    shape_layer = np.zeros((y_res, x_res), dtype=float)
 
+    # Generating random centers within ranges to use as bounds for the shapes.
     ry_l = ((rng.random(item_count) * (y_res - (item_size_list+2))) + item_size_list/2 + 1).astype(int)
     cx_l = ((rng.random(item_count) * (x_res - (item_size_list+2))) + item_size_list/2 + 1).astype(int)
     if label == 0:
         for i in range(item_count):
             rr, cc = skimage.draw.circle_perimeter(ry_l[i], cx_l[i], int(item_size_list[i] / 2))
-            # print(item_size_list[i], ry_l[i], cx_l[i])
-            image[first_channel_used][rr, cc] = v_max
+            shape_layer[rr, cc] += opacity
     else:
-        # Have to add 2 to the label to generate the correct number of points;
-        # generates 1 extra to correctly space points in the linear space function.
+        # Label + 2 yields correct point-spacing in circle; last point not used.
         linear_space = np.tile(np.linspace(0, 1, label + 2)[0:-1], (item_count, 1))
         random_angle_offset = np.reshape(rng.random(size=item_count), (item_count, 1))
         angle_matrix = (linear_space + random_angle_offset % 1) * 2*np.pi
@@ -331,19 +332,18 @@ def draw_shapes(image, label, size, frequency, v_max, x_res, y_res, random_chann
             for i in range(item_count):
                 for k in range(len(x_pos_matrix[i]) - 1):
                     rr, cc = skimage.draw.line(y_pos_matrix[i][k], x_pos_matrix[i][k], y_pos_matrix[i][k + 1], x_pos_matrix[i][k + 1])
-                    # print(ry_l[i], cx_l[i], item_size_list[i])
-                    image[first_channel_used][rr, cc] = v_max
+                    shape_layer[rr, cc] += opacity
         else:
             for i in range(item_count):
                 for k in range(len(x_pos_matrix[i])):
                     rr, cc = skimage.draw.line(y_pos_matrix[i][k - 1], x_pos_matrix[i][k - 1], y_pos_matrix[i][k], x_pos_matrix[i][k])
-                    image[first_channel_used][rr, cc] = v_max
+                    shape_layer[rr, cc] += opacity
 
-    # sets all other channels to the first channel if used
-    for j in range(first_channel_used + 1, len(image)):
+    # sets all other channels to the first-used-channel if used.
+    for j in range(len(image)):
         if channels_used[j]:
-            # This is a really sketchy solution; it depends on values being truncated to channel-max-limits postprocess.
-            image[j] += image[first_channel_used]
+            # Originally deemed sketchy, now needed due to use of opacity.
+            image[j] += shape_layer
 
     return image
 
@@ -456,9 +456,9 @@ def manage_export_path(export_type, path, export_folder, verbose):
 
 
 # Example usage:
-#images, labels = generate_multilabel_toy_dataset(10000, label_count=5, path="", x_res=512, y_res=128, size=(10, 40),
+# images, labels = generate_multilabel_toy_dataset(10000, label_count=5, path="", x_res=512, y_res=128, size=(10, 40),
 #                                                 export_folder="ShapesDataset", export_type='image_folder',
-#                                                 random_channel_classes=False)
+#                                                 random_channel_classes=True)
 
 # Timing
 """
