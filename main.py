@@ -391,7 +391,6 @@ def export_images(image_matrix, label_matrix, path, export_folder, export_type, 
             for i in range(len(label_matrix)):
                 # Might be a better way to do this than to use all the replace commands...
                 # Issues with numpy boolean array; there's an extra white-space before "True" to pad with "False".
-
                 txt_str = str(label_matrix[i]).replace("[", "").replace("]", "").replace(" True", "True").replace(" ", ", ")
                 f.write(f"{i:{img_number_length}}.png, {str(txt_str)}\n")
         if verbose:
@@ -408,25 +407,32 @@ def export_images(image_matrix, label_matrix, path, export_folder, export_type, 
             pickle.dump(label_matrix, file)
 
         if verbose:
-            progressbar(1)
+            progressbar(1.)
 
 
 def manage_export_path(export_type, path, export_folder, verbose):
     if export_type is not None:
         # base directory doesn't exist, send a warning, but create it anyway.
         if os.path.isdir(path) is False:
+            os.makedirs(path)
             if verbose:
                 warnings.warn("Path provided may be one level too deep!"
                               "This may result in the Dataset folder being in a sub-folder of the project.")
-            os.makedirs(path)
 
-        # If Datafolder exists, check and delete files within folder; otherwise, create the dataset folder.
-        if os.path.isdir(f"{path}\\{export_folder}"):
+        # If Datafolder doesn't exist; create it.
+        if os.path.isdir(f"{path}\\{export_folder}") is False:
+            os.makedirs(f"{path}\\{export_folder}")
+            if verbose:
+                print("Creating Dataset folder...")
+
+        # Else, check and delete files within folder; otherwise, create the dataset folder.
+        else:
             if verbose:
                 print("Main Export Folder already exists!")
-
             # Gets all files and folders within the directory
             files = [[dirpath, dirname, filename] for (dirpath, dirname, filename) in os.walk(f"{path}\\{export_folder}")]
+
+            # Determines if there are files within the export folder.
             files_found = False
             for location in files:
                 if len(location[2]) != 0:
@@ -442,51 +448,9 @@ def manage_export_path(export_type, path, export_folder, verbose):
                         os.remove(f"{location[0]}\\{file}")
 
             # No sub-folders should exist in Dataset folder unless user-made.
-            # If they exist, script can't delete w/o admin privileges. Instead, just warn the user.
-            # Instead, just warn the user.
+            # Can't delete them w/o admin privileges; instead just warn user.
             if verbose:
                 for location in files:
                     if len(location[1]) > 0:
                         for folder in location[1]:
                             warnings.warn(f"Sub-folder(s) '{folder}' within dataset path: {path}\\{export_folder}.")
-        else:
-            if verbose:
-                print("Creating Dataset folder...")
-            os.makedirs(f"{path}\\{export_folder}")
-
-
-# Example usage:
-# images, labels = generate_multilabel_toy_dataset(10000, label_count=5, path="", x_res=512, y_res=128, size=(10, 40),
-#                                                 export_folder="ShapesDataset", export_type='image_folder',
-#                                                 random_channel_classes=True)
-
-# Timing
-"""
-import timeit
-import matplotlib.pyplot as plt
-times = timeit.repeat("generate_multilabel_toy_dataset(10000, label_count=5, path='', export_type=None)",
-                     "from __main__ import generate_multilabel_toy_dataset", repeat=10, number=1)
-bins = np.linspace(min(times), max(times), 10)
-avg_time = sum(times)/len(times)
-stdev = np.std(times)
-print(f"Average Time: {avg_time}, std: {stdev}")
-print(times)
-plt.hist(times, bins)
-plt.show()
-"""
-# Time Statistics Notes: Will Be Removed on Release
-"""
-8/29/23 6:15 PM
-10k-3l: 6.9095, 6.965, 7.092, 7.134, 6.986
-10k-5l: 14.293532099982258, 14.326442399993539, 14.194133099983446, 14.242385699995793, 14.304134599980898
-
-9/1/23 8:53 PM
-10k-3l: 7.980153200100176, 6.761500300024636, 6.769760199938901, 6.751440299907699, 6.677566699916497, 6.732773500028998
-10k-5l: 14.21016500005498, 14.10257089999504, 14.03012620005756, 14.49815839994698, 14.05022810003720, 14.01318210002500
-
-9/3/23 10:47 AM
-10k-3l: 7.47453360003419, 7.553757000016048, 7.5641286000609, 7.513953900081105, 7.49404060002416, 7.557089700014330
-10k-5l: 14.99204309994820, 14.78349519998300, 14.85193130001425, 14.8092820999445, 15.00487050006631, 14.93172400002367
-
-9/3/23 2:13 PM
-"""
