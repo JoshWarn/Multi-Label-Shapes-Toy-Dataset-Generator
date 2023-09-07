@@ -21,6 +21,7 @@ The recommended use case is to create an easy dataset that any neural network sh
                                 frequency=[2, 20],
                                 label_count=3,
                                 label_frequency=0.5,
+                                opacity=1,
                                 path="",
                                 export_folder="ShapesDataset"
                                 export_type="image_folder",
@@ -43,6 +44,7 @@ The recommended use case is to create an easy dataset that any neural network sh
 - If messages should be shown (progress bar, comments)
 
 ### Features TODO:
+- ~~Implement an opacity option.~~ (Added 9/4, Done 9/6/23)
 - ~~Detect files in dataset folder and replace them if generating a new dataset.~~ (Added 8/30, Done 9/2/23)
 - Add more warnings, tracebacks, and comments. (Added 8/27, Ongoing)
 - ~~Add an option to get rid of no-label images (all zeros).~~ (Added 8/27, Removed 8/30/23)
