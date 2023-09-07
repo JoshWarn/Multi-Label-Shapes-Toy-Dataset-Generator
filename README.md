@@ -37,7 +37,7 @@ The recommended use case is to create an easy dataset that any neural network sh
 - Frequency of shapes in image (random between bounds or hard-set)
 - Frequency of images to have a label (linear space between bounds or hard-set)
 - If shapes should be generated to random channels
-
+- Opacity of generated shapes
 ### Additional options:
 - Exporting the dataset into an image-folder/pickle file
 - Setting a seed for random numbers
