@@ -198,7 +198,7 @@ def input_validity(var_val, var_name, var_dtypes, var_min=None, var_max=None,
     :param series_len:          Expected variable length (only used if var_accepted_types has "list").
     :param series_trend:        Trend of values in list; "None" (bypassing), "increasing", "decreasing".
                                 Used for optional [Min, Max] entries.
-    :param actions:             What to do if triggered; "warn" or "raise" accepted.
+    :param actions:             What to do if triggered for each error; "warn" or "raise" accepted.
                                 Order is [var_val_type, min_val, max_val, series_len, series_trend]
     :return:                    None.
     """
