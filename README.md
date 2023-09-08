@@ -62,9 +62,9 @@ The recommended use case is to create an easy dataset that any neural network sh
 |:---------------:|:---------------:|
 |![0000](https://github.com/JoshWarn/Multi-Label-Shapes-Toy-Dataset-Generator/assets/70070682/23aa6e02-25e6-486c-8292-f2d05748ddc4)|![0023](https://github.com/JoshWarn/Multi-Label-Shapes-Toy-Dataset-Generator/assets/70070682/e685227d-8686-4c1a-85ad-1c2cce5d3177)|
 
-|256x256x3 5-label w/ all 5 classes:| 256x256x3 5-label w/ all & random channels:|
-|:---------------:|:---------------:|
-| ![00020](https://github.com/JoshWarn/MultiLabelToyDatasetGenerator/assets/70070682/9b882357-44e8-4934-828c-c8d49bf0ae25) |![00086](https://github.com/JoshWarn/Multi-Label-Shapes-Toy-Dataset-Generator/assets/70070682/f01bf01a-7ef5-49fc-adf1-30cb6fd05fad)|
+|256x256x3 5-label w/ all 5 classes:| 256x256x3 5-label w/ all & random channels:|256x256x3 5-label w/ all & Opacity=0.5|
+|:---------------:|:---------------:||:---------------:|
+| ![00020](https://github.com/JoshWarn/MultiLabelToyDatasetGenerator/assets/70070682/9b882357-44e8-4934-828c-c8d49bf0ae25) |![00086](https://github.com/JoshWarn/Multi-Label-Shapes-Toy-Dataset-Generator/assets/70070682/f01bf01a-7ef5-49fc-adf1-30cb6fd05fad)|![09971](https://github.com/JoshWarn/Multi-Label-Shapes-Toy-Dataset-Generator/assets/70070682/d18bb98d-b1bd-445f-99d7-7e657520e086)|
 
 
 
