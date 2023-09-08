@@ -63,6 +63,7 @@ def generate_multilabel_toy_dataset(sample_number=1000, x_res=256, y_res=256, ch
     np.random.seed(seed=random_seed)
     image_matrix = np.full((sample_number, channels, y_res, x_res), v_min, dtype=np.float32)
     label_matrix = np.zeros((sample_number, label_count), dtype=np.bool_)
+
     # If path provided use it; else get local project path.
     path = path if path else os.path.abspath(os.getcwd())
 
@@ -71,7 +72,7 @@ def generate_multilabel_toy_dataset(sample_number=1000, x_res=256, y_res=256, ch
 
     # Created label probabilities for each label
     if type(label_frequency) is int or float:
-        label_frequency_list = [[1 - label_frequency, label_frequency] for label in range(label_count)]
+        label_frequency_list = [[1 - label_frequency, label_frequency] for _ in range(label_count)]
     else:
         # Make a list between min and max frequency; currently just linear
         label_frequency_temp = np.linspace(label_frequency[0], label_frequency[1], label_count)
@@ -94,7 +95,7 @@ def generate_multilabel_toy_dataset(sample_number=1000, x_res=256, y_res=256, ch
         # For each label, if True draw shapes
         for j in range(label_count):
             if label_matrix[i][j]:
-                image_matrix[i] = draw_shapes(image_matrix[i], j, size, frequency, opacity, x_res, y_res,
+                image_matrix[i] = draw_shapes(image_matrix[i], j, size, frequency, opacity*v_max, x_res, y_res,
                                               random_channel_classes, rng)
 
     # Setting progress bar to completed
@@ -112,6 +113,8 @@ def generate_multilabel_toy_dataset(sample_number=1000, x_res=256, y_res=256, ch
     if export_type is not None:
         if verbose:
             print(f"Saving dataset to {export_type}...")
+
+        # Exporting images
         export_images(image_matrix, label_matrix, path, export_folder, export_type, verbose)
 
     if verbose:
@@ -123,7 +126,7 @@ def check_input_validity(sample_number, x_res, y_res, channels, v_min, v_max, si
                          label_count, label_frequency, opacity, path, export_folder, export_type,
                          verbose, random_seed, random_channel_classes):
     """
-    Checks the validity of all inputs; broken into a separate function for code-cleanliness
+    Wrapper function to checks validity of all inputs; broken into a separate function for code-cleanliness
     """
     input_validity(var_val=sample_number, var_name="Sample-Count", var_dtypes=[int], var_min=1, var_max=1E9,
                    series_len=1, series_trend=None, actions=["raise", "raise", "warn", "raise", "raise"])
@@ -169,7 +172,6 @@ def check_input_validity(sample_number, x_res, y_res, channels, v_min, v_max, si
                    actions=["raise", "raise", "raise", "raise", "raise"])
 
     # Additional cleaning/verification for non-standard variables
-
     # Make sure valid_export is in list
     valid_exports = ["image_folder", "pickle", None]
     if export_type not in valid_exports:
@@ -210,6 +212,8 @@ def input_validity(var_val, var_name, var_dtypes, var_min=None, var_max=None,
     max_val_error_msg = f"Value of {var_val} in {var_name} is more than {var_max}."
     series_len_error_msg = f"Variable length of {var_val} in {var_name} isn't equal to {series_len}."
     series_trend_error_msg = f"Series trend of {var_name} expected to be {series_trend}, but was {var_val}."
+    series_trend_invalid_msg = (f"Series trend of {var_name} expected to be in [None, '', 'increasing', 'decreasing'],"
+                                f"but was {series_trend}")
 
     # Checking variable type
     if var_val_type not in var_dtypes:
@@ -259,6 +263,13 @@ def input_validity(var_val, var_name, var_dtypes, var_min=None, var_max=None,
             elif actions[3] == "raise":
                 raise TypeError(series_len_error_msg)
 
+    # Ensure series_trend is valid
+    if series_trend not in [None, "", "increasing", "decreasing"]:
+        if actions[4] == "warn":
+            warnings.warn(series_trend_invalid_msg)
+        elif actions[4] == "raise":
+            raise Exception(series_trend_invalid_msg)
+
     # If series, make sure trend is correct.
     # Make sure each value is larger/smaller than the previous
     if var_val_type in ["list", "tuple"] and series_trend in ["increasing", "decreasing"]:
@@ -286,12 +297,15 @@ def draw_shapes(image, label, size, frequency, opacity, x_res, y_res, random_cha
         item_count = rng.integers(frequency[0], frequency[1])
     else:
         item_count = frequency
+
     # Selecting what channel(s) to put shapes on:
     if random_channel_classes:
-        # Using randint to make a boolean "channels-used" array which is then shuffled.
+        # Using randint to make a boolean "channels-used" array.
         # Ensures that at least 1 channel has the shapes.
         num_used_channels = rng.integers(1, len(image))
         channels_used = np.array([True] * num_used_channels + [False]*(len(image)-num_used_channels), dtype=bool)
+
+        # Shuffle to use random channels
         np.random.shuffle(channels_used)
     else:
         # If not random, select all channels.
